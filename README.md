@@ -6,6 +6,7 @@ That is why there have been no recent updates. Once finished it will be a flask 
 
 ## Demo:
 ![Tempaltes](readme_media/Yacht-Demo.gif "templates")
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FSelfhostedPro%2FYacht.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FSelfhostedPro%2FYacht?ref=badge_shield)
 
 ## Installation:
 Currently only linux has been verified as working but we are open to the idea of supporting windows eventually as well.
@@ -50,3 +51,6 @@ https://raw.githubusercontent.com/SelfhostedPro/selfhosted_templates/yacht/Templ
 
 ## License
 [MIT License](LICENSE.md)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FSelfhostedPro%2FYacht.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FSelfhostedPro%2FYacht?ref=badge_large)
