@@ -16,7 +16,7 @@
     "core-js": "^3.6.5",
     "moment": "^2.27.0",
     "vee-validate": "^3.3.7",
-    "vue": "^2.6.11",
+    "vue": "^2.6.12",
     "vue-chartjs": "^3.5.0",
     "vue-router": "^3.4.3",
     "vuetify": "^2.3.9",
