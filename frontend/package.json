@@ -18,7 +18,7 @@
     "vee-validate": "^3.4.0",
     "vue": "^2.6.12",
     "vue-chartjs": "^3.5.1",
-    "vue-router": "^3.4.5",
+    "vue-router": "^3.4.6",
     "vuetify": "^2.3.12",
     "vuex": "^3.4.0"
   },
