@@ -13,7 +13,7 @@
     "axios": "^0.20.0",
     "chart.js": "^2.9.4",
     "chartjs-plugin-crosshair": "^1.1.6",
-    "core-js": "^3.6.5",
+    "core-js": "^3.7.0",
     "moment": "^2.29.1",
     "vee-validate": "^3.4.3",
     "vue": "^2.6.12",
