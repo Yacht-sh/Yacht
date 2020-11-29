@@ -15,7 +15,7 @@
     "chartjs-plugin-crosshair": "^1.1.6",
     "core-js": "^3.6.5",
     "moment": "^2.29.1",
-    "vee-validate": "^3.4.3",
+    "vee-validate": "^3.4.4",
     "vue": "^2.6.12",
     "vue-chartjs": "^3.5.1",
     "vue-router": "^3.4.8",
