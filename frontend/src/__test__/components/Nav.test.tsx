@@ -13,6 +13,6 @@ describe("<Nav /> tests", () => {
     
     const navLinksFound = screen.getAllByTestId("nav-link");
 
-    expect(navLinksFound.length / 2).toEqual(navLinks.length);
+    expect(navLinksFound.length).toEqual(navLinks.length * 2 + 2);
   });
 });

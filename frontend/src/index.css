@@ -5,9 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
 html, body {
-  height: 100%;
-  width: 100%;
-  @apply font-yacht antialiased;
+  @apply font-yacht antialiased h-screen w-screen !important;
 }
 
 .cls-1 {
@@ -36,15 +34,29 @@ html, body {
   padding-top: 64px;
 }
 
+.side-nav-container {
+  @apply flex flex-col justify-between text-black dark:text-white bg-header-lgt dark:bg-header-drk inset-x-0 top-0 h-full w-14 p-2;
+}
+
+.side-nav-icon-container {
+  @apply flex flex-row justify-center;
+}
+
+.side-nav-icon {
+  @apply my-1 mx-2 p-2 rounded bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500 fill-current text-icon-lgt dark:text-icon-drk;
+}
+
 .bottom-nav {
-  @apply sm:hidden absolute inset-x-0 bottom-0 !important text-black dark:text-white bg-header-lgt dark:bg-header-drk w-full h-16;
+  @apply sm:hidden absolute inset-x-0 bottom-0 text-black dark:text-white bg-header-lgt dark:bg-header-drk w-full h-16;
   min-width: 480px;
 }
 
+.bottom-nav-container {
+  @apply flex flex-row justify-around h-full p-4;
+}
+
 .app-container {
-  min-width: 100vw !important;
-  min-height: 100vh !important;
-  @apply bg-white dark:bg-black text-black dark:text-white;
+  @apply bg-white dark:bg-black text-black dark:text-white h-screen w-screen;
 }
 
 .btn {

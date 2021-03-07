@@ -11,6 +11,8 @@ module.exports = {
       colors: {
         "header-lgt": "#C4C4C4",
         "header-drk": "#424242",
+        "icon-lgt": "#5A5A5A",
+        "icon-drk": "#FFFFFF",
       },
     },
     screens: {

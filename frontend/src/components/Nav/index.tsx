@@ -1,69 +1,60 @@
+import React from "react";
 import { Link } from "react-router-dom";
+import ApplicationsIcon from "../../icons/Nav/ApplicationsIcon";
+import DashboardIcon from "../../icons/Nav/DashboardIcon";
+import DocsIcon from "../../icons/Nav/DocsIcon";
+import GithubIcon from "../../icons/Nav/GithubIcon";
+import ProjectsIcon from "../../icons/Nav/ProjectsIcon";
+import ResourcesIcon from "../../icons/Nav/ResourcesIcon";
+import SettingsIcon from "../../icons/Nav/SettingsIcon";
+import TemplatesIcon from "../../icons/Nav/TemplatesIcon";
+import SideNavLink from "./SideNavLink";
 
-interface navLink {
+export interface navLink {
   label: string;
-  route: string;
-}
-
-interface extLink {
-  label: string;
-  uri: string;
+  address: string;
+  icon?: JSX.Element;
 }
 
 export const navLinks: navLink[] = [
-  { label: "dash", route: "/" },
-  { label: "apps", route: "/apps" },
-  { label: "tmpl", route: "/templates" },
-  { label: "proj", route: "/projects" },
-  { label: "rsrc", route: "/resources" },
-  { label: "stgs", route: "/settings" },
+  { label: "dash", address: "/", icon: <DashboardIcon /> },
+  { label: "apps", address: "/apps", icon: <ApplicationsIcon /> },
+  { label: "tmpl", address: "/templates", icon: <TemplatesIcon /> },
+  { label: "proj", address: "/projects", icon: <ProjectsIcon /> },
+  { label: "rsrc", address: "/resources", icon: <ResourcesIcon /> },
+  { label: "stgs", address: "/settings", icon: <SettingsIcon /> },
 ];
 
-const bottomLinks: extLink[] = [
-  { label: "yacht", uri: "https://yacht.sh" },
-  { label: "github", uri: "https://github.com/SelfHostedPro/Yacht" },
+const bottomLinks: navLink[] = [
+  { label: "yacht", address: "/docs", icon: <DocsIcon /> },
+  { label: "github", address: "/github", icon: <GithubIcon /> },
 ];
 
 const Nav = () => {
   return (
     <div className={"nav"} data-testid={"app-nav"}>
       <div className={"side-nav"}>
-        <div
-          className={
-            "flex flex-col justify-between text-black dark:text-white bg-header-lgt dark:bg-header-drk inset-x-0 top-0 h-full w-14 p-2"
-          }
-        >
-          <ul>
+        <div className={"side-nav-container"}>
+          <div>
             {navLinks.map((link, index) => (
-              <div key={`link-${index}`}>
-                <Link
-                  
-                  to={link.route}
-                  data-testid={"nav-link"}
-                >
-                  <li>{link.label}</li>
-                </Link>
-                <hr />
-              </div>
+              <SideNavLink key={`link-${index}`} link={link} />
             ))}
-          </ul>
-          <ul>
+          </div>
+          <div>
             {bottomLinks.map((link, index) => (
-              <li key={index}>
-                <a href={link.uri}>{link.label}</a>
-              </li>
+              <SideNavLink key={`link-${index}`} link={link} />
             ))}
-          </ul>
+          </div>
         </div>
       </div>
       <div className={"bottom-nav"}>
         <div
-          className={"flex flex-row justify-around h-full p-4 overflow-auto"}
+          className={"bottom-nav-container"}
         >
           {navLinks.map((link, index) => (
             <Link
               key={`link-${index}`}
-              to={link.route}
+              to={link.address}
               data-testid={"nav-link"}
             >
               {link.label}

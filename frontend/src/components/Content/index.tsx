@@ -17,6 +17,20 @@ const Content = () => {
         <Route path="/projects" component={Projects} />
         <Route path="/resources" component={Resources} />
         <Route path="/settings" component={Settings} />
+        <Route
+          path="/docs"
+          component={() => {
+            window.location.href = "https://yacht.sh";
+            return null;
+          }}
+        />
+        <Route
+          path="/github"
+          component={() => {
+            window.location.href = "https://github.com/SelfHostedPro/Yacht";
+            return null;
+          }}
+        />
       </Switch>
     </div>
   );

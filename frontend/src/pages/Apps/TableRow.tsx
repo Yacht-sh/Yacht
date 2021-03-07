@@ -11,7 +11,6 @@ interface OwnProps {
 const TableRow = ({ app }: OwnProps) => {
   const { name, short_id, created, status, ports } = app;
   const appData = [name, short_id, created, status];
-  console.log(ports);
 
   return (
     <tr className={"border-b border-gray-200 hover:bg-gray-100"}>
