@@ -1,7 +1,8 @@
-
 const Settings = () => {
   return (
-    <h1>Settings - WORKING</h1>
+    <div className={"dark:text-white text-black text-4xl"}>
+      Settings - WORKING
+    </div>
   );
 };
 

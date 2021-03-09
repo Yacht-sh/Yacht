@@ -1,7 +1,8 @@
-
 const Templates = () => {
   return (
-    <h1>Templates - WORKING</h1>
+    <div className={"dark:text-white text-black text-4xl"}>
+      Templates - WORKING
+    </div>
   );
 };
 

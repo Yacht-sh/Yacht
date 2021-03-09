@@ -21,11 +21,13 @@ const Apps = () => {
 
     fetchApps();
   }, [setApps]);
-  
+
   return (
     <div className={"flex flex-col justify-center align-center"}>
-      <div>Hello world, we be fetching apps!</div>
-      <table className={"min-w-full w-full table-auto"}>
+      <div className={"dark:text-white text-black text-4xl"}>
+        Behold... apps!
+      </div>
+      <table className={"w-full table-auto my-4"}>
         <TableHeader headers={tableHeaders} />
         <TableBody />
       </table>

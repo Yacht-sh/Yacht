@@ -30,8 +30,8 @@ const TableRow = ({ app }: OwnProps) => {
       ))}
       <td className={"py-2 px-4 sm:px-2 text-center"}>
         {ports.map((port, index) => (
-          <div key={`port-${index}`} className={"my-1"}>
-            <span className="px-3 py-1 my-1 text-xs text-purple-600 bg-purple-200 rounded-full has-tooltip">
+          <div key={`port-${index}`} className={"my-2"}>
+            <span className="px-2 py-1 text-purple-600 bg-purple-200 rounded-full tex1t-sm my- has-tooltip">
               <a
                 href={`http://${port.HostIp === "0.0.0.0" ? "localhost" : port.HostIp}:${port.HostPort}`}
               >

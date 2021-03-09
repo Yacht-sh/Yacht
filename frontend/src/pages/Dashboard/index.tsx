@@ -1,7 +1,8 @@
-
 const Dashboard = () => {
   return (
-    <h1>Dashboard - WORKING</h1>
+    <div className={"dark:text-white text-black text-4xl"}>
+      Dashboard - WORKING
+    </div>
   );
 };
 

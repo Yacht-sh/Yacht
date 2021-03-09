@@ -1,7 +1,7 @@
 
 const Resources = () => {
   return (
-    <h1>Resources - WORKING</h1>
+    <div className={"dark:text-white text-black text-4xl"}>Resources - WORKING</div>
   );
 };
 

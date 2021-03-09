@@ -9,7 +9,7 @@ import Templates from "../../pages/Templates";
 
 const Content = () => {
   return (
-    <div className={"ml-0 sm:ml-14 p-4"} data-testid={"app-content"}>
+    <div className={"ml-0 sm:ml-14 p-4 h-full bg-white dark:bg-black"} data-testid={"app-content"}>
       <Switch>
         <Route path="/" exact component={Dashboard} />
         <Route path="/apps" component={Apps} />
