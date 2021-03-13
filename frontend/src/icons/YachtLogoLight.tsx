@@ -6,6 +6,7 @@ const YachtLogoLight = () => (
     height={32}
     width={47}
     viewBox={"0 0 1127.48 761.83"}
+    data-testid={"yacht-logo"}
   >
     <path
       fill={"#606060"}

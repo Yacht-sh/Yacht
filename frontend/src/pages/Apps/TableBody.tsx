@@ -7,10 +7,18 @@ const TableBody = () => {
   const apps = useRecoilValue(appsState);
 
   return (
-    <tbody className={"text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 text-sm font-light"}>
-      {apps.length > 0 ? apps.map((app, index) => (
-        <TableRow app={app} key={`row-${index}`} />
-      )) : <tr><span>Loading apps...</span></tr>}
+    <tbody
+      className={
+        "text-gray-700 dark:text-gray-300 bg-transparent text-sm font-light"
+      }
+    >
+      {apps.length > 0 ? (
+        apps.map((app, index) => <TableRow app={app} key={`row-${index}`} />)
+      ) : (
+        <tr>
+          <span>Loading apps...</span>
+        </tr>
+      )}
     </tbody>
   );
 };

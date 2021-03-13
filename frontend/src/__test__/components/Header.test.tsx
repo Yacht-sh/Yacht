@@ -9,17 +9,21 @@ describe("<Header /> tests", () => {
   it("should render the Yacht logo & text", () => {
     render(
       <Router>
-        <Header user={mockUser} />
+        <Header
+          user={mockUser}
+          isThemeTypeDark={true}
+          toggleThemeType={jest.fn()}
+        />
       </Router>
     );
 
     const username = screen.getByText(/admin@yacht.local/i);
     const homeText = screen.getByText(/home/i);
-    const yachtText = screen.getByText(/^yacht/i);
+    const yachtText = screen.getAllByText(/^yacht/i);
     const yachtLogo = screen.getByTestId("yacht-logo");
 
     expect(homeText).toBeInTheDocument();
-    expect(yachtText).toBeInTheDocument();
+    expect(yachtText.length).toEqual(2);
     expect(username).toBeInTheDocument();
     expect(yachtLogo).toBeInTheDocument();
   });

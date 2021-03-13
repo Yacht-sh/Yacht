@@ -6,6 +6,7 @@ const YachtLogoDark = () => (
     height={32}
     width={47}
     viewBox={"0 0 1127.48 762.97"}
+    data-testid={"yacht-logo"}
   >
     <path
       fill={"#fff"}

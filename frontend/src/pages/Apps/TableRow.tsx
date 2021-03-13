@@ -3,6 +3,7 @@ import clsx from "clsx";
 
 import { App } from "../../store/apps";
 import ChevronDown from "../../icons/ChevronDown";
+import StatusPing from "./StatusPing";
 
 interface OwnProps {
   app: App;
@@ -21,10 +22,15 @@ const TableRow = ({ app }: OwnProps) => {
             index === 0 && "flex flex-row justify-start",
             index === 1 && "hidden md:table-cell",
             index === 2 && "hidden lg:table-cell",
+            index === 3 && "hidden xs:table-cell",
             "py-3 px-6 text-center"
           )}
         >
-          {index === 0 && <ChevronDown />}
+          {index === 0 && (
+            <>
+              <StatusPing status={status} /> <ChevronDown />
+            </>
+          )}
           {data}
         </td>
       ))}
@@ -33,11 +39,11 @@ const TableRow = ({ app }: OwnProps) => {
           <div key={`port-${index}`} className={"my-2"}>
             <span className="px-2 py-1 text-purple-600 bg-purple-200 rounded-full tex1t-sm my- has-tooltip">
               <a
-                href={`http://${port.HostIp === "0.0.0.0" ? "localhost" : port.HostIp}:${port.HostPort}`}
+                href={`http://${
+                  port.HostIp === "0.0.0.0" ? "localhost" : port.HostIp
+                }:${port.HostPort}`}
               >
-                {port.Label
-                  ? port.Label
-                  : port.HostPort}
+                {port.Label ? port.Label : port.HostPort}
               </a>
             </span>
           </div>

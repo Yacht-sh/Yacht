@@ -8,38 +8,21 @@ html, body {
   @apply font-yacht antialiased h-screen w-screen !important;
 }
 
-.cls-1 {
-  fill: #fff;
-}
-
-.cls-1-lgt {
-  fill: #606060
-}
-
-.cls-2 {
-  fill: #34495e; 
-}
-
-.cls-3 {
-  fill: #41b883;
-}
-
 .mat-ui-shadow {
   box-shadow: 0 2px 4px -1px rgb(0 0 0 / 20%), 0 4px 5px 0 rgb(0 0 0 / 14%), 0 1px 10px 0 rgb(0 0 0 / 12%);
 }
 
 .header {
-  @apply sticky top-0 p-4 text-black dark:text-white bg-header-lgt dark:bg-header-drk h-16 w-full min-w-full z-10 leading-none;
-  min-width: 480px !important;
+  @apply sticky top-0 inset-x-0 p-4 text-black dark:text-white bg-header-lgt dark:bg-header-drk h-16 z-10 leading-none;
 }
 
 .side-nav {
-  @apply hidden sm:block h-full fixed inset-y-0 left-0;
-  padding-top: 64px;
+  transition: all 0.1s ease-in; 
+  @apply hidden sm:block h-full fixed inset-y-0 left-0 pt-16;
 }
 
 .side-nav-container {
-  @apply flex flex-col justify-between text-black dark:text-white bg-header-lgt dark:bg-header-drk inset-x-0 top-0 h-full w-14 p-2;
+  @apply flex flex-col justify-between text-black dark:text-white bg-header-lgt dark:bg-header-drk inset-x-0 top-0 h-full p-2;
 }
 
 .side-nav-icon-container {
@@ -47,16 +30,15 @@ html, body {
 }
 
 .side-nav-icon {
-  @apply my-1 mx-2 p-2 rounded bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500 fill-current text-icon-lgt dark:text-icon-drk;
+  @apply my-1 p-2 rounded bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500 fill-current text-icon-lgt dark:text-icon-drk flex flex-row w-full;
 }
 
 .bottom-nav {
   @apply sm:hidden absolute inset-x-0 bottom-0 text-black dark:text-white bg-header-lgt dark:bg-header-drk w-full h-16;
-  min-width: 480px;
 }
 
 .bottom-nav-container {
-  @apply flex flex-row justify-around h-full p-4;
+  @apply flex flex-row justify-between h-full p-4;
 }
 
 .app-container {
@@ -64,5 +46,5 @@ html, body {
 }
 
 .btn {
-  @apply flex flex-row justify-center items-center rounded text-sm text-white uppercase font-semibold tracking-widest p-4;
+  @apply flex flex-row justify-center items-center rounded text-sm text-white uppercase font-semibold tracking-widest p-4 bg-btn-grn h-9;
 }

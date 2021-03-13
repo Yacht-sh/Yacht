@@ -13,9 +13,11 @@ module.exports = {
         "header-drk": "#424242",
         "icon-lgt": "#5A5A5A",
         "icon-drk": "#FFFFFF",
+        "btn-grn": "#41B883",
       },
     },
     screens: {
+      'sn': '220px',
       'xs': '475px',
       ...defaultTheme.screens,
     },

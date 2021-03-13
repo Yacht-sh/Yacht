@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import Nav, { navLinks } from "../../components/Nav";
+import Nav, { bottomNavLinks, sideNavLinks } from "../../components/Nav";
 import { BrowserRouter as Router } from "react-router-dom";
 
 describe("<Nav /> tests", () => {
@@ -10,9 +10,11 @@ describe("<Nav /> tests", () => {
         <Nav />
       </Router>
     );
-    
-    const navLinksFound = screen.getAllByTestId("nav-link");
 
-    expect(navLinksFound.length).toEqual(navLinks.length * 2 + 2);
+    const sideNavLinksFound = screen.getAllByTestId("side-nav-link");
+    const bottomNavLinksFound = screen.getAllByTestId("bottom-nav-link");
+
+    expect(sideNavLinksFound.length).toEqual(sideNavLinks.length + 2);
+    expect(bottomNavLinksFound.length).toEqual(bottomNavLinks.length);
   });
 });

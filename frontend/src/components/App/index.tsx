@@ -7,23 +7,30 @@ import Nav from "../Nav";
 
 enum ThemeType {
   DARK = "dark",
-  LIGHT = "light"
+  LIGHT = "light",
 }
 
 const App = () => {
-  const [themeType, setThemeType] = useState(ThemeType.DARK)
+  const [themeType, setThemeType] = useState(ThemeType.DARK);
 
   const toggleThemeType = () => {
     if (themeType === ThemeType.DARK) {
-      setThemeType(ThemeType.LIGHT)
+      setThemeType(ThemeType.LIGHT);
     } else {
-      setThemeType(ThemeType.DARK)
+      setThemeType(ThemeType.DARK);
     }
-  }
+  };
 
-   return (
-    <div className={clsx("app-container overflow-hidden", themeType)} data-testid={"app-container"}>
-      <Header user={mockUser} isThemeTypeDark={themeType === ThemeType.DARK} toggleThemeType={toggleThemeType}/>
+  return (
+    <div
+      className={clsx("app-container overflow-hidden", themeType)}
+      data-testid={"app-container"}
+    >
+      <Header
+        user={mockUser}
+        isThemeTypeDark={themeType === ThemeType.DARK}
+        toggleThemeType={toggleThemeType}
+      />
       <Nav />
       <Content />
     </div>

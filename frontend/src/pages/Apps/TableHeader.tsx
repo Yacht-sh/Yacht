@@ -18,7 +18,8 @@ const TableHeader = ({ headers }: OwnProps) => {
             <th
               className={clsx(
                 header === "created" && "hidden lg:table-cell",
-                header === "short_id" && "hidden md:table-cell"
+                header === "short_id" && "hidden md:table-cell",
+                header === "status" && "hidden xs:table-cell"
               )}
               key={`header-${index}`}
             >
