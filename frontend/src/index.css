@@ -5,6 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
 html, body {
+  -webkit-tap-highlight-color:transparent;
   @apply font-yacht antialiased h-screen w-screen !important;
 }
 
@@ -17,7 +18,7 @@ html, body {
 }
 
 .side-nav {
-  transition: all 0.1s ease-in; 
+  transition: width 0.1s ease-in; 
   @apply hidden sm:block h-full fixed inset-y-0 left-0 pt-16;
 }
 
@@ -30,7 +31,7 @@ html, body {
 }
 
 .side-nav-icon {
-  @apply my-1 p-2 rounded bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500 fill-current text-icon-lgt dark:text-icon-drk flex flex-row w-full;
+  @apply my-1 py-2 px-3 rounded bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500 fill-current text-icon-lgt dark:text-icon-drk flex flex-row w-full;
 }
 
 .bottom-nav {
@@ -38,7 +39,11 @@ html, body {
 }
 
 .bottom-nav-container {
-  @apply flex flex-row justify-between h-full p-4;
+  @apply flex flex-row justify-between h-full px-4 py-2.5;
+}
+
+.nav-active {
+  color: #41B883 !important;
 }
 
 .app-container {

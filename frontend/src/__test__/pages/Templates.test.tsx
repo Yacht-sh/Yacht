@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import Templates from "../../pages/Templates";
+import Templates from "../../components/Content/pages/Templates";
 
 describe("Templates page tests", () => {
   it("should render the templates page", () => {

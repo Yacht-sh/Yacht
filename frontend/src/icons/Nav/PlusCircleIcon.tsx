@@ -7,13 +7,13 @@ const PlusCircleIcon = () => {
   return (
     <div
       className={
-        "w-16 h-16 border-2 box-content -mt-10 -mb-1 -mx-2 border-header-lgt dark:border-header-drk flex flex-col justify-center items-center text-black dark:text-white bg-header-lgt dark:bg-header-drk rounded-full"
+        "w-14 h-14 border-2 box-content -mt-8 -mb-1 -mx-2 border-header-lgt dark:border-header-drk flex flex-col justify-center items-center bg-header-lgt dark:bg-header-drk rounded-full"
       }
     >
       <svg
         xmlns={"http://www.w3.org/2000/svg"}
         viewBox={"0 0 24 24"}
-        className={"w-16 h-16"}
+        className={"w-14 h-14"}
       >
         <path d={pathD} fill={"currentColor"} />
       </svg>

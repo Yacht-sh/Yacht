@@ -3,13 +3,16 @@ import { render, screen } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router-dom";
 
 import App from "../../components/App";
+import { RecoilRoot } from "recoil";
 
 describe("< /> tests", () => {
   it("should render the dashboard page", () => {
     render(
-      <Router>
-        <App />
-      </Router>
+      <RecoilRoot>
+        <Router>
+          <App />
+        </Router>
+      </RecoilRoot>
     );
 
     const header = screen.getByTestId("app-header");

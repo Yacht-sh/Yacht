@@ -1,16 +1,16 @@
 import React from "react";
 import { Switch, Route } from "react-router-dom";
-import Apps from "../../pages/Apps";
-import Dashboard from "../../pages/Dashboard";
-import Projects from "../../pages/Projects";
-import Resources from "../../pages/Resources";
-import Settings from "../../pages/Settings";
-import Templates from "../../pages/Templates";
+import Apps from "./pages/Apps";
+import Dashboard from "./pages/Dashboard";
+import Projects from "./pages/Projects";
+import Resources from "./pages/Resources";
+import Settings from "./pages/Settings";
+import Templates from "./pages/Templates";
 
 const Content = () => {
   return (
     <div
-      className={"ml-0 sm:ml-14 p-4 h-full  bg-white dark:bg-black"}
+      className={"ml-0 sm:ml-14 p-4 h-full bg-white dark:bg-gray-900"}
       data-testid={"app-content"}
     >
       <Switch>

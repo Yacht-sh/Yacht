@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useRecoilState } from "recoil";
 import ApplicationsIcon from "../../icons/Nav/ApplicationsIcon";
 import DashboardIcon from "../../icons/Nav/DashboardIcon";
 import DocsIcon from "../../icons/Nav/DocsIcon";
@@ -10,6 +10,8 @@ import ProjectsIcon from "../../icons/Nav/ProjectsIcon";
 import ResourcesIcon from "../../icons/Nav/ResourcesIcon";
 import SettingsIcon from "../../icons/Nav/SettingsIcon";
 import TemplatesIcon from "../../icons/Nav/TemplatesIcon";
+import { ViewState, viewState } from "../../store/view";
+import BottomNavLink from "./BottomNavLink";
 import SideNavLink from "./SideNavLink";
 
 export interface navLink {
@@ -35,13 +37,14 @@ const sideNavLowerLinks: navLink[] = [
 export const bottomNavLinks: navLink[] = [
   { label: "Dashboard", address: "/", icon: <DashboardIcon /> },
   { label: "Applications", address: "/apps", icon: <ApplicationsIcon /> },
-  { label: "Deploy", address: "/", icon: <PlusCircleIcon /> },
+  { label: "Deploy", address: "/templates", icon: <PlusCircleIcon /> },
   { label: "Resources", address: "/resources", icon: <ResourcesIcon /> },
   { label: "Settings", address: "/settings", icon: <SettingsIcon /> },
 ];
 
 const Nav = () => {
   const [isNavExpanded, setIsNavExpanded] = useState(false);
+  const [appViewState, setAppViewState] = useRecoilState(viewState);
 
   return (
     <div className={"nav"} data-testid={"app-nav"}>
@@ -56,7 +59,8 @@ const Nav = () => {
               <SideNavLink
                 key={`link-${index}`}
                 link={link}
-                isNavExpanded={isNavExpanded}
+                isActiveView={appViewState === link.label.toUpperCase()}
+                onClick={() => setAppViewState(ViewState[index])}
               />
             ))}
           </div>
@@ -65,7 +69,7 @@ const Nav = () => {
               <SideNavLink
                 key={`link-${index}`}
                 link={link}
-                isNavExpanded={isNavExpanded}
+                onClick={() => setAppViewState(ViewState[0])}
               />
             ))}
           </div>
@@ -74,16 +78,12 @@ const Nav = () => {
       <div className={"bottom-nav"}>
         <div className={"bottom-nav-container"}>
           {bottomNavLinks.map((link, index) => (
-            <Link
+            <BottomNavLink
+              link={link}
               key={`link-${index}`}
-              to={link.address}
-              data-testid={"bottom-nav-link"}
-            >
-              <div className={"flex flex-col justify-center items-center"}>
-                {link.icon}
-                <span className={"text-xs mt-1"}>{link.label}</span>
-              </div>
-            </Link>
+              isActiveView={appViewState === link.label.toUpperCase()}
+              onClick={setAppViewState}
+            />
           ))}
         </div>
       </div>

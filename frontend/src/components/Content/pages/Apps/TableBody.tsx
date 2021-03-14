@@ -1,6 +1,6 @@
 import React from "react";
 import { useRecoilValue } from "recoil";
-import { appsState } from "../../store/apps";
+import { appsState } from "../../../../store/apps";
 import TableRow from "./TableRow";
 
 const TableBody = () => {
@@ -16,7 +16,7 @@ const TableBody = () => {
         apps.map((app, index) => <TableRow app={app} key={`row-${index}`} />)
       ) : (
         <tr>
-          <span>Loading apps...</span>
+          <td>Loading apps...</td>
         </tr>
       )}
     </tbody>

@@ -1,8 +1,8 @@
 import React from "react";
 import clsx from "clsx";
 
-import { App } from "../../store/apps";
-import ChevronDown from "../../icons/ChevronDown";
+import { App } from "../../../../store/apps";
+import ChevronDown from "../../../../icons/ChevronDown";
 import StatusPing from "./StatusPing";
 
 interface OwnProps {

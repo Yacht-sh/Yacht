@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { appsState } from "../../store/apps";
+import { appsState } from "../../../../store/apps";
+import ContentWrapper from "../../ContentWrapper";
 import TableBody from "./TableBody";
 import TableHeader from "./TableHeader";
 
@@ -23,15 +24,12 @@ const Apps = () => {
   }, [setApps]);
 
   return (
-    <div className={"flex flex-col justify-center align-center"}>
-      <div className={"dark:text-white text-black text-4xl"}>
-        Behold... apps!
-      </div>
+    <ContentWrapper header={"Applications"}>
       <table className={"w-full table-auto my-4"}>
         <TableHeader headers={tableHeaders} />
         <TableBody />
       </table>
-    </div>
+    </ContentWrapper>
   );
 };
 

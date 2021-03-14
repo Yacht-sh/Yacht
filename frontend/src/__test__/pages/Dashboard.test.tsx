@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import Dashboard from "../../pages/Dashboard";
+import Dashboard from "../../components/Content/pages/Dashboard";
 
 describe("Dashboard page tests", () => {
   it("should render the dashboard page", () => {

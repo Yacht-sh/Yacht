@@ -14,6 +14,9 @@ module.exports = {
         "icon-lgt": "#5A5A5A",
         "icon-drk": "#FFFFFF",
         "btn-grn": "#41B883",
+        "content-header": "#41B883",
+        "content-drk": "#424242",
+        "content-lgt": "#424242",
       },
     },
     screens: {

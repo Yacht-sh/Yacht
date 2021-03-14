@@ -2,13 +2,16 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import Nav, { bottomNavLinks, sideNavLinks } from "../../components/Nav";
 import { BrowserRouter as Router } from "react-router-dom";
+import { RecoilRoot } from "recoil";
 
 describe("<Nav /> tests", () => {
   it("should render a sidebar or bottombar with links", () => {
     render(
-      <Router>
-        <Nav />
-      </Router>
+      <RecoilRoot>
+        <Router>
+          <Nav />
+        </Router>
+      </RecoilRoot>
     );
 
     const sideNavLinksFound = screen.getAllByTestId("side-nav-link");

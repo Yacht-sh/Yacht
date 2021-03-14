@@ -10,7 +10,7 @@ const TableHeader = ({ headers }: OwnProps) => {
     <thead>
       <tr
         className={
-          "bg-gray-300 dark:bg-gray-700 text-black dark:text-white uppercase text-lg leading-normal"
+          "bg-gray-300 dark:bg-gray-800 text-black dark:text-white uppercase text-lg leading-normal"
         }
       >
         {headers.map((header, index) => {

@@ -1,37 +1,21 @@
 import clsx from "clsx";
-import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { navLink } from ".";
 
 interface OwnProps {
   link: navLink;
-  isNavExpanded: boolean;
+  onClick: () => void;
+  isActiveView?: boolean;
 }
 
-const SideNavLink = ({ link, isNavExpanded = false }: OwnProps) => {
-  const [isDisplayText, setIsDisplayText] = useState(false);
-
-  useEffect(() => {
-    const expandTimeout = () =>
-      setTimeout(() => {
-        setIsDisplayText(true);
-      }, 150);
-
-    isNavExpanded && expandTimeout();
-    !isNavExpanded && setIsDisplayText(false);
-
-    return clearTimeout(expandTimeout());
-  }, [isNavExpanded]);
-
+const SideNavLink = ({ link, isActiveView, onClick }: OwnProps) => {
   return (
-    <div>
+    <div onClick={onClick}>
       <Link to={link.address} data-testid={"side-nav-link"}>
         <div className={"side-nav-icon-container"}>
-          <div className={"side-nav-icon"}>
+          <div className={clsx("side-nav-icon", isActiveView && "nav-active")}>
             <div className={"self-start"}>{link.icon}</div>
-            <div className={clsx("ml-5", isDisplayText ? "block" : "hidden")}>
-              {link.label}
-            </div>
+            <div className={"ml-6 truncate"}>{link.label}</div>
           </div>
         </div>
       </Link>
