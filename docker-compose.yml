@@ -1,15 +1,20 @@
 ---
+# Docker compose version
 version: '3'
+# services setup
 services:
   yacht:
-    container_name: yacht
-    restart: unless-stopped
-    ports:
+    container_name: yacht # container name
+    restart: unless-stopped # restart policy
+    ports: # published ports
       - 8000:8000
     volumes:
-      - yacht:/config
-      - /var/run/docker.sock:/var/run/docker.sock
-    image: selfhostedpro/yacht:latest
+      - yacht:/config # local directory for configs
+      - /var/run/docker.sock:/var/run/docker.sock 
+    image: selfhostedpro/yacht:latest #image pulled
+    networks: # can be added or modified depending on the network you want the container to reside on, defaults to own when nothing is there. 
+      - yacht_default 
 
+# Specified for persistant volumes if used. 
 volumes:
   yacht:
