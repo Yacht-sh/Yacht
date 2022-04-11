@@ -12,7 +12,7 @@ RUN npm run build
 
 # Setup Container and install Flask
 FROM lsiobase/alpine:3.12 as deploy-stage
-MAINTANER Natalya Higdon "queenlinuxtechgroup@gmail.com"
+MAINTAINER Natalya Higdon "queenlinuxtechgroup@gmail.com"
 
 # Set Variables
 ENV PYTHONIOENCODING=UTF-8
