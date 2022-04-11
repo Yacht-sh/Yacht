@@ -12,11 +12,13 @@ RUN npm run build
 
 # Setup Container and install Flask
 FROM lsiobase/alpine:3.12 as deploy-stage
-# MAINTANER Your Name "info@selfhosted.pro"
+MAINTANER Natalya Higdon "queenlinuxtechgroup@gmail.com"
 
 # Set Variables
 ENV PYTHONIOENCODING=UTF-8
 ENV THEME=Default
+ENV DISABLE_AUTH=TRUE
+ENV DOCKER_HOST=tcp://127.0.0.1:2375
 
 WORKDIR /api
 COPY ./backend/requirements.txt .
