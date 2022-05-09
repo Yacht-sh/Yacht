@@ -92,6 +92,16 @@ You can utilize the following environment variables in Yacht. None of them are m
 | DATABASE_URL | If you want to have Yacht use a database like SQL instead of the built in sqlite on you can put that info here in the following format: `postgresql://user:password@postgresserver/db` |
 | COMPOSE_DIR  | This is the path inside the container which contains your folders that have docker compose projects. (_compose tag only_)                                                              |
 
+## Notes for installing Docker and Yacht on WSL2 platform under Windows
+
+If you're running under WSL2 inside Windows, because of the difference in how permissions are handled, you're essentially inside a Linux machine accessing a Windows file system. You will need to run this after installation before adding the Yacht container:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Additional information about this can be found in the post-installation steps for Linux.
+
 ## License
 
 [MIT License](LICENSE.md)
