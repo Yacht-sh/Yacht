@@ -79,8 +79,7 @@ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1
 ```
 
 ## Supported Environment Variables
-
-You can utilize the following environment variables in Yacht. None of them are manditory.
+You can utilize the following environment variables in Yacht. None of them are mandatory.
 
 | Variable     | Description                                                                                                                                                                            |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
