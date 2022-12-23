@@ -413,8 +413,13 @@ export default {
     splitEnv(data) {
       const env = [];
       for (let index = 0; index < data.length; index++) {
-        let _split_data = data[index].split("=");
-        env.push(_split_data);
+        let _split_pos = data[index].indexOf("=");
+        let _name = data[index].substr(
+          0,
+          _split_pos >= 0 ? _split_pos : data[index].length
+        );
+        let _value = _split_pos >= 0 ? data[index].substr(_split_pos + 1) : "";
+        env.push([_name, _value]);
       }
       return env;
     }
