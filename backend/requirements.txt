@@ -49,3 +49,4 @@ uvicorn[standard]==0.15.0
 websocket-client==0.59.0
 websockets==10.0
 yarl==1.6.3
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
