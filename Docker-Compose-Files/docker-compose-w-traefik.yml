@@ -1,0 +1,38 @@
+### Use are your own risk, has not been tested by staff. 
+
+---
+version: "3"
+
+networks:
+  traefik_network:
+    external:
+      name: web
+
+services:
+  yacht:
+    image: selfhostedpro/yacht:devel
+    restart: unless-stopped
+    networks:
+      - traefik_network
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - "SECRET_KEY=my_secret_key"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./config:/config
+    labels:
+      - "traefik.http.services.yacht.loadbalancer.server.scheme=http"
+      - "traefik.http.services.yacht.loadbalancer.server.port=8000"
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.yacht-http.service=yacht"
+      - "traefik.http.routers.yacht-http.rule=Host(`yacht.domain.tld`)"
+      - "traefik.http.routers.yacht-http.entrypoints=http"
+      - "traefik.http.routers.yacht.service=yacht"
+      - "traefik.http.routers.yacht.rule=Host(`yacht.domain.tld`)"
+      - "traefik.http.routers.yacht.entrypoints=https"
+      - "traefik.http.routers.yacht.tls=true"
+      - "traefik.http.routers.yacht.tls.certresolver=dns"
+      - "traefik.http.routers.yacht.tls.domains[0].main=domain.tld"
+      - "traefik.http.routers.yacht.tls.domains[0].sans=*.domain.tld"
