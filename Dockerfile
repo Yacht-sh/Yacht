@@ -10,6 +10,11 @@ RUN npm install
 COPY ./frontend/ .
 RUN npm run build
 
+# Download docker for building images from compose files
+# Not everything is needed so /usr/bin/docker can be copied
+# out later to keep the overall image size small
+RUN apk add docker
+
 # Setup Container and install Flask
 FROM lsiobase/alpine:3.12 as deploy-stage
 # MAINTANER Your Name "info@selfhosted.pro"
@@ -57,6 +62,9 @@ COPY root ./backend/alembic.ini /
 # Vue
 COPY --from=build-stage /app/dist /app
 COPY nginx.conf /etc/nginx/
+
+# Docker
+COPY --from=build-stage /usr/bin/docker /usr/bin/docker
 
 # Expose
 VOLUME /config
