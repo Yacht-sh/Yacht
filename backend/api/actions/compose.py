@@ -265,12 +265,13 @@ the content of compose.content to it.
 
 
 def write_compose(compose):
+    filepath = settings.COMPOSE_DIR + compose.name + "/docker-compose.yml"
     if not os.path.exists(settings.COMPOSE_DIR + compose.name):
         try:
             pathlib.Path(settings.COMPOSE_DIR + compose.name).mkdir(parents=True)
         except Exception as exc:
             raise HTTPException(exc.status_code, exc.detail)
-    with open(settings.COMPOSE_DIR + compose.name + "/docker-compose.yml", "w") as f:
+    with open(filepath + ".temp", "w") as f:
         try:
             f.write(compose.content)
             f.close()
@@ -281,7 +282,10 @@ def write_compose(compose):
                 )
         except Exception as exc:
             raise HTTPException(exc.status_code, exc.detail)
-
+    try:
+        shutil.move(filepath + ".temp", filepath)
+    except Exception as exc: 
+            raise HTTPException(exc.status_code, exc.detail)
     return get_compose(name=compose.name)
 
 
