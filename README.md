@@ -143,7 +143,6 @@ Additional information about this can be found in the [Post-installation steps f
 docker run --rm -d -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower:latest --cleanup --run-once <container-name>
 ```
 
-
 ## License
 
 [MIT License](LICENSE.md)
