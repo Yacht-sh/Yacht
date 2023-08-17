@@ -12,25 +12,15 @@
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
 
-**I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/SelfhostedPro/yacht-api). Please note, that while we are rewriting the back end. The Yacht.sh website is outdated on its instructions, please visit https://dev.yacht.sh for now. The main Yacht.sh site will be updated with the new release. **
+**I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/SelfhostedPro/yacht-api). **
 
-_If the built in update button isn't working for you try the following command:_
-
-```
-docker run --rm -d -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower:latest --cleanup --run-once <container-name>
-```
+**Please note, that while we are rewriting the back end. The Yacht.sh website is outdated on its instructions, please visit https://dev.yacht.sh for now. The main Yacht.sh site will be updated with the new release.**
 
 ## Demo:
 
 ![Tempaltes](https://raw.githubusercontent.com/SelfhostedPro/Yacht/master/readme_media/Yacht-Demo.gif "templates")
 
 ## Installation:
-<<<<<<< HEAD
-=======
-
-Currently only linux has been verified as working but we are open to the idea of supporting windows eventually as well.
->>>>>>> 6c7a438 (Removed broken badge from readme.md)
-
 Currently only linux has been verified as working but we are open to the idea of supporting windows eventually as well.
 
 Installation documentation can be found [here](https://dev.yacht.sh/docs/Installation/Install).
@@ -144,6 +134,15 @@ $ sudo usermod -aG docker $USER
 ```
 
 Additional information about this can be found in the [Post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/)
+
+## Update button not working?
+
+*If the built in update button isn't working for you try the following command:*
+
+```
+docker run --rm -d -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower:latest --cleanup --run-once <container-name>
+```
+
 
 ## License
 
