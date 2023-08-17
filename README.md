@@ -12,7 +12,7 @@
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
 
-**I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/SelfhostedPro/yacht-api). **
+I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/SelfhostedPro/yacht-api). 
 
 **Please note, that while we are rewriting the back end. The Yacht.sh website is outdated on its instructions, please visit https://dev.yacht.sh for now. The main Yacht.sh site will be updated with the new release.**
 
