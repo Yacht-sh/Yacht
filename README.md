@@ -33,9 +33,9 @@ Currently only linux has been verified as working but we are open to the idea of
 
 Currently only linux has been verified as working but we are open to the idea of supporting windows eventually as well.
 
-Installation documentation can be found [here](https://yacht.sh/docs/Installation/Install).
+Installation documentation can be found [here](https://dev.yacht.sh/docs/Installation/Install).
 
-Check out the getting started guide if this is the first time you've used Yacht: https://yacht.sh/docs/Installation/Getting_Started
+Check out the getting started guide if this is the first time you've used Yacht: https://dev.yacht.sh/docs/Installation/Getting_Started
 
 **Yacht is also available via the DigitalOcean marketplace:**
 
