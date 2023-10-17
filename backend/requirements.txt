@@ -44,7 +44,7 @@ sse-starlette==0.7.2
 starlette==0.14.2
 texttable==1.6.4
 typing-extensions==3.10.0.2
-urllib3==1.26.6
+urllib3==1.26.18
 uvicorn[standard]==0.15.0
 websocket-client==0.59.0
 websockets==10.0
