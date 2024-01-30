@@ -12,8 +12,8 @@ def find_yml_files(path):
     matches = {}
     for root, _, filenames in os.walk(path, followlinks=True):
         for _ in set().union(
-            fnmatch.filter(filenames, "docker-compose.yml"),
-            fnmatch.filter(filenames, "docker-compose.yaml"),
+            fnmatch.filter(filenames, "compose.y*ml"),
+            fnmatch.filter(filenames, "docker-compose.y*ml"),
         ):
             key = root.split("/")[-1]
             matches[key] = os.path.join(os.getcwd(), root + "/" + _)
