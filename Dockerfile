@@ -41,7 +41,8 @@ RUN \
 	gem install sass &&\
 	echo "**** Installing Python Modules ****" && \
 	pip3 install wheel &&\
-	pip3 install -r requirements.txt
+	pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir &&\
+	pip3 install --use-pep517 -r requirements.txt --no-cache-dir
 RUN apk del --purge build-dependencies && \
     rm -rf /root/.cache /tmp/*
 
