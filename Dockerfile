@@ -36,6 +36,10 @@ RUN \
 	apk add --no-cache \
 	python3 \
 	py3-pip \
+	openssl-dev \
+	jpeg-dev \
+	zlib-dev \
+	yaml-dev \
 	nginx &&\
 	pip3 install --upgrade pip setuptools &&\
 	gem install sass &&\
