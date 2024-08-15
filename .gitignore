@@ -13,3 +13,4 @@ config
 .idea/vcs.xml
 .idea/workspace.xml
 .idea/Yacht.iml
+.DS_Store
