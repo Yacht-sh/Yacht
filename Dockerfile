@@ -21,7 +21,6 @@ ENV THEME=Default
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
-<<<<<<< HEAD
 # Install Dependancies
 RUN \
 	echo "**** install build packages ****" && \
