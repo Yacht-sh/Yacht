@@ -10,13 +10,8 @@ RUN npm install --verbose
 COPY ./frontend/ ./
 RUN npm run build --verbose
 
-<<<<<<< HEAD
 # Setup Container and install Flask
 FROM python:3.8-alpine as deploy-stage
-=======
-# Setup Container and install Flask backend
-FROM python:3.8-alpine as deploy-stage
->>>>>>> dbc3ce0 (Update Dockerfile)
 
 # Set environment variables
 ENV PYTHONIOENCODING=UTF-8
@@ -25,7 +20,6 @@ ENV THEME=Default
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
-# Install build dependencies and system libraries
 RUN apk add --no-cache \
     build-base \
     libffi-dev \
@@ -36,12 +30,11 @@ RUN apk add --no-cache \
     jpeg-dev \
     zlib-dev \
     yaml-dev \
-    nginx
-
+    python3-dev \
     nginx && \
     pip3 install --upgrade pip setuptools wheel && \
     pip3 install Cython && \
-    pip3 install --only-binary :all: PyYAML && \
+    pip3 install --no-cache-dir --force-reinstall PyYAML==5.4.1 && \
     pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir && \
     pip3 install --use-pep517 -r requirements.txt --no-cache-dir
 
