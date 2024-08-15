@@ -24,7 +24,7 @@ mysqlclient==2.0.3
 passlib==1.7.4
 psycopg2-binary==2.8.6
 pycparser==2.20
-pydantic==1.7.3
+pydantic==1.10.13
 PyJWT==1.7.1
 python-multipart==0.0.5
 PyYAML==5.4
