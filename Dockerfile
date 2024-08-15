@@ -1,5 +1,5 @@
 # Build Vue.js frontend
-FROM node:14.5.0-alpine as build-stage
+FROM node:20-alpine as build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
@@ -11,7 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build --verbose
 
 # Setup Container and install Flask
-FROM python:3.8-alpine as deploy-stage
+FROM python:3.11-alpine as deploy-stage
 
 # Set environment variables
 ENV PYTHONIOENCODING=UTF-8
@@ -31,14 +31,14 @@ RUN apk add --no-cache \
     zlib-dev \
     yaml-dev \
     python3-dev \
+    ruby-dev \
     nginx && \
     pip3 install --upgrade pip setuptools wheel && \
     pip3 install Cython && \
     pip3 install --no-cache-dir --force-reinstall PyYAML==5.4.1 && \
     pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir && \
     pip3 install --use-pep517 -r requirements.txt --no-cache-dir
-
-RUN apk add --no-cache ruby-dev && gem install sass --verbose
+RUN gem install sass --verbose
 
 RUN apk del --purge build-base && \
     rm -rf /root/.cache /tmp/*
