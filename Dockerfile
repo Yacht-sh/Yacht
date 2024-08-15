@@ -10,9 +10,13 @@ RUN npm install --verbose
 COPY ./frontend/ ./
 RUN npm run build --verbose
 
+<<<<<<< HEAD
 # Setup Container and install Flask
-FROM lsiobase/alpine:3.15 as deploy-stage
-# MAINTANER Your Name "info@selfhosted.pro"
+FROM python:3.8-alpine as deploy-stage
+=======
+# Setup Container and install Flask backend
+FROM python:3.8-alpine as deploy-stage
+>>>>>>> dbc3ce0 (Update Dockerfile)
 
 # Set environment variables
 ENV PYTHONIOENCODING=UTF-8
@@ -21,35 +25,29 @@ ENV THEME=Default
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
-# Install Dependancies
-RUN \
-	echo "**** install build packages ****" && \
-	apk add --no-cache --virtual=build-dependencies \
-	g++ \
-	make \
-	python3-dev \
-	libffi-dev \
-	mysql-dev \
-	postgresql-dev \
-	ruby-dev &&\
-	echo "**** install packages ****" && \
-	apk add --no-cache \
-	python3 \
-	py3-pip \
-	openssl-dev \
-	jpeg-dev \
-	zlib-dev \
-	yaml-dev \
-	nginx &&\
-	pip3 install --upgrade pip setuptools &&\
-	gem install sass &&\
-	echo "**** Installing Python Modules ****" && \
-	pip3 install wheel &&\
-	pip3 install Cython &&\
-	pip3 install --only-binary :all: PyYAML &&\
-	pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir &&\
-	pip3 install --use-pep517 -r requirements.txt --no-cache-dir
-RUN apk del --purge build-dependencies && \
+# Install build dependencies and system libraries
+RUN apk add --no-cache \
+    build-base \
+    libffi-dev \
+    openssl-dev \
+    musl-dev \
+    postgresql-dev \
+    mysql-dev \
+    jpeg-dev \
+    zlib-dev \
+    yaml-dev \
+    nginx
+
+    nginx && \
+    pip3 install --upgrade pip setuptools wheel && \
+    pip3 install Cython && \
+    pip3 install --only-binary :all: PyYAML && \
+    pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir && \
+    pip3 install --use-pep517 -r requirements.txt --no-cache-dir
+
+RUN apk add --no-cache ruby-dev && gem install sass --verbose
+
+RUN apk del --purge build-base && \
     rm -rf /root/.cache /tmp/*
 
 COPY ./backend/api ./
