@@ -21,6 +21,7 @@ ENV THEME=Default
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
+<<<<<<< HEAD
 # Install Dependancies
 RUN \
 	echo "**** install build packages ****" && \
@@ -37,7 +38,7 @@ RUN \
 	python3 \
 	py3-pip \
 	nginx &&\
-	pip3 install --upgrade pip &&\
+	pip3 install --upgrade pip setuptools &&\
 	gem install sass &&\
 	echo "**** Installing Python Modules ****" && \
 	pip3 install wheel &&\
