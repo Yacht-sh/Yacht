@@ -22,6 +22,7 @@ COPY ./backend/requirements.txt ./
 
 RUN apk add --no-cache \
     build-base \
+    curl \
     libffi-dev \
     openssl-dev \
     musl-dev \
@@ -38,6 +39,10 @@ RUN apk add --no-cache \
     pip3 install --no-cache-dir --force-reinstall PyYAML==5.4.1 && \
     pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir && \
     pip3 install --use-pep517 -r requirements.txt --no-cache-dir
+
+RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
+
 RUN gem install sass --verbose
 
 RUN apk del --purge build-base && \

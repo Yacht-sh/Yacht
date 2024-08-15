@@ -14,7 +14,7 @@ cryptography==3.4.8
 databases==0.5.0
 distro==1.6.0
 docker==5.0.1
-docker-compose==1.29.2
+# docker-compose==1.29.2
 dockerpty==0.4.1
 docopt==0.6.2
 fastapi==0.68.1
