@@ -38,7 +38,7 @@ RUN apk add --no-cache \
     ruby-dev \
     nginx \
     curl \
-    libxml2-dev \     
+    libxml2-dev \
     libxslt-dev
 
 # Install Docker Compose 2.x as a standalone binary
@@ -46,4 +46,21 @@ RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-
     chmod +x /usr/local/bin/docker-compose
 
 # Upgrade pip, setuptools, and wheel
-RUN​⬤
+RUN pip3 install --upgrade pip setuptools wheel
+
+# Install Python packages from requirements.txt
+RUN pip3 install -r requirements.txt --no-cache-dir --verbose
+
+# Install SASS via gem
+RUN gem install sass --verbose
+
+# Clean up build dependencies
+RUN apk del --purge build-base && \
+    rm -rf /root/.cache /tmp/*
+
+# Copy the backend code
+COPY ./backend/ ./
+
+# Expose ports and define the command to run the application
+EXPOSE 5000
+CMD ["python3", "app.py"]
