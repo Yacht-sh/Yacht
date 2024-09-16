@@ -1,15 +1,3 @@
-# Build Vue.js frontend
-FROM node:20-alpine as build-stage
-
-ARG VUE_APP_VERSION
-ENV VUE_APP_VERSION=${VUE_APP_VERSION}
-
-WORKDIR /app
-COPY ./frontend/package*.json ./
-RUN npm install --verbose
-COPY ./frontend/ ./
-RUN npm run build --verbose
-
 # Setup Container and install Flask backend
 FROM python:3.11-alpine as deploy-stage
 
@@ -37,7 +25,9 @@ RUN apk add --no-cache \
     python3-dev \
     ruby-dev \
     nginx \
-    curl
+    curl \
+    libxml2-dev \      # Additional dependencies
+    libxslt-dev        # Additional dependencies
 
 # Install Docker Compose 2.x as a standalone binary
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
