@@ -1,5 +1,5 @@
 # Build Vue.js frontend
-FROM node:20-alpine as build-stage
+FROM node:20-alpine AS build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
@@ -11,7 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build --verbose
 
 # Setup Container and install Flask backend
-FROM python:3.11-alpine as deploy-stage
+FROM python:3.11-alpine AS deploy-stage
 
 # Set environment variables
 ENV PYTHONIOENCODING=UTF-8
