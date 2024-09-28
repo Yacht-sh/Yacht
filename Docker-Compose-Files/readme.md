@@ -3,7 +3,7 @@ More information can be found at [Yacht.sh](https://yacht.sh/docs/Installation/I
 
 For Windows please use the docker-compose_windows.yml file. 
 
-For MacOS, Linux, WSL2 host please use docker-compose-MAC-LINUX.yml
+For MacOS, Linux, WSL2 host please use docker-compose-MAC-Linux.yml
 
 Because WSL2 is a Linux VM, your need to add your user account in WSL2 as a member of the docker security group. 
 Follow instructions below
