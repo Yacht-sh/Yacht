@@ -38,6 +38,8 @@ RUN apk add --no-cache \
     ruby-dev \
     nginx \
     curl \
+    rust \
+    cargo \
     libxml2-dev \
     libxslt-dev
 
