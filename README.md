@@ -8,6 +8,12 @@
 <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.png" width="30%"  alt="Yacht Logo From Github"/>
 </a>
 
+## This applicaton has not been updated in a while, I have brought it up to date as much as possible for security. Under the "wicked-testdeploy" branch.
+
+## However, there is a new version at https://github.com/SelfhostedPro/yacht-nuxt that is almost complete. 
+
+### wickedyoda
+
 ## Yacht
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
