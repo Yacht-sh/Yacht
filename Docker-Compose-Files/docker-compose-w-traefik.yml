@@ -10,7 +10,7 @@ networks:
 
 services:
   yacht:
-    image: selfhostedpro/yacht:devel
+    image: wickedyoda/yacht:main
     restart: unless-stopped
     networks:
       - traefik_network

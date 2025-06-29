@@ -3,48 +3,49 @@ aiosqlite==0.19.0
 aiostream==0.4.4
 alembic==1.10.4
 bcrypt==4.0.1
-certifi==2023.7.22
+certifi==2024.7.4
 cffi==1.15.1
 chardet==4.0.0
 click==8.1.6
 databases==0.6.2
-dnspython==2.3.0
+dnspython==2.6.1
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
 email-validator==1.3.1
-fastapi==0.103.1
+# fastapi 0.103.1 was pinned due to compatibility issues
+fastapi==0.115.3
 # fastapi-jwt-auth==0.6.1 (wrong version cant deploy)
 fastapi-jwt-auth==0.5.0
-gunicorn==20.1.0
-h11==0.14.0
-httptools==0.5.0
-idna==3.4
-python-jose==3.3.0
+gunicorn==23.0.0
+h11==0.16.0
+httptools==0.6.4
+idna==3.7
+python-jose==3.4.0
 makefun==1.15.0
 mysqlclient==2.2.0
 passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.7
 pycparser==2.21
-pydantic==2.0.2
+pydantic==1.10.22
 # PyJWT==2.7.0
-PyJWT==1.7.1
-python-multipart==0.0.6
+PyJWT==2.4.0
+python-multipart==0.0.18
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.4
 six==1.16.0
 sh==1.14.3
 # SQLAlchemy==2.0.20
 SQLAlchemy==1.4.41
-starlette==0.27.0
+starlette==0.41.3
 # sse-starlette==1.4.1 (wrong version cant deploy)
 sse-starlette==2.1.3
-typing-extensions==4.7.1
-urllib3==2.0.4
+typing-extensions==4.14.0
+urllib3==2.5.0
 uvicorn==0.22.0
-uvloop==0.17.0
+uvloop==0.21.0
 # websocket-client==1.7.2 (wrong version cant deploy)
 websocket-client==1.6.4
 websockets==11.0.2
 wheel==0.41.0
-setuptools==68.0.0
+setuptools==78.1.1

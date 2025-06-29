@@ -1,6 +1,10 @@
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from sh import docker_compose
+try:
+    from sh import docker_compose
+except Exception:
+    def docker_compose(*args, **kwargs):
+        raise RuntimeError("docker-compose not available")
 import os
 import yaml
 import pathlib

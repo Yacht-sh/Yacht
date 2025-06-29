@@ -13,6 +13,6 @@ services:
       - PUID=0
       - PGID=0
       - COMPOSE_DIR=/compose
-    image: selfhostedpro/yacht
+    image: wickedyoda/yacht:main
 volumes:
   yacht:
