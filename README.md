@@ -10,10 +10,6 @@
 
 ## This applicaton has not been updated in a while, I have brought it up to date as much as possible for security. Under the "wicked-testdeploy" branch. But this will not fully build. 
 
-## However, there is a new version at https://github.com/Yacht-Docker-Container that is almost complete. 
-
-### wickedyoda
-
 ## Yacht
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
