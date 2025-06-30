@@ -10,7 +10,7 @@
 
 ## This applicaton has not been updated in a while, I have brought it up to date as much as possible for security. Under the "wicked-testdeploy" branch. But this will not fully build. 
 
-## However, there is a new version at https://github.com/SelfhostedPro/yacht-nuxt that is almost complete. 
+## However, there is a new version at [https://github.com/SelfhostedPro/yacht-nux](https://github.com/Yacht-Docker-Container) that is almost complete. 
 
 ### wickedyoda
 
