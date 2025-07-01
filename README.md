@@ -1,4 +1,4 @@
-![logo](https://raw.githubusercontent.com/wickedyoda/Yacht/master/readme_media/Yacht_logo_1_dark.png "templates")
+![logo](https://raw.githubusercontent.com/yacht-sh/yacht/master/readme_media/Yacht_logo_1_dark.png "templates")
 
 ### I am currently working on this repo to bring it up to date, patience and we will get there soon. 
 ### wickedyoda
@@ -7,15 +7,12 @@
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
 
-**I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/wickedyoda/yacht-nuxt).**
+**I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/yacht-sh/yacht-nuxt).**
 
-![Tempaltes](https://raw.githubusercontent.com/Wickedyoda/Yacht/master/readme_media/Yacht-Demo.gif "templates")
+![Tempaltes](https://raw.githubusercontent.com/yacht-sh/yacht/master/readme_media/Yacht-Demo.gif "templates")
 
 ## Installation:
 
-Installation instructions can be found here: https://wickedyoda.com/?p=3088
-
-Currently only linux has been verified as working but we are open to the idea of supporting windows eventually as well.
 
 **Keep in mind, this is an alpha so the risk of data loss is real and it may not be stable**
 
