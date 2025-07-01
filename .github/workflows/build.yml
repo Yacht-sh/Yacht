@@ -39,11 +39,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v1 
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }} 
 
       - name: Build and push
         uses: docker/build-push-action@v2
@@ -53,11 +48,8 @@ jobs:
           build-args: |
             VUE_APP_VERSION=v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
           tags: |
-            selfhostedpro/yacht
-            selfhostedpro/yacht:latest-${{ steps.current-time.outputs.formattedTime }}
-            selfhostedpro/yacht:v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
-            ghcr.io/selfhostedpro/yacht
-            ghcr.io/selfhostedpro/yacht:latest-${{ steps.current-time.outputs.formattedTime }}
-            ghcr.io/selfhostedpro/yacht:v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
+            ghcr.io/${{ github.repository_owner }}/yacht
+            ghcr.io/${{ github.repository_owner }}/yacht:latest-${{ steps.current-time.outputs.formattedTime }}
+            ghcr.io/${{ github.repository_owner }}/yacht:v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
