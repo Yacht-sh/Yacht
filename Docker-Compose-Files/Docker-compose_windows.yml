@@ -9,7 +9,7 @@ services:
     volumes:
       - yacht:/config
       - /var/run/docker.sock:/var/run/docker.sock
-    image: wickedyoda/yacht:main
+    image: yacht-sh/yacht:main
 
 volumes:
   yacht:
