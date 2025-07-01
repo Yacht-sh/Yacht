@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "develop" ]
 
-jjobs:
+jobs:
   build:
     runs-on: ubuntu-latest
     steps:
@@ -38,7 +38,6 @@ jjobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
-
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -50,4 +49,4 @@ jjobs:
             ghcr.io/${{ github.repository_owner }}/yacht:devel
             ghcr.io/${{ github.repository_owner }}/yacht:devel-${{ steps.current-time.outputs.formattedTime }}
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-
