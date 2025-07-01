@@ -22,7 +22,7 @@ module.exports = {
     themeColor: "#41B883",
     workboxOptions: {
       skipWaiting: true,
-      clientsClaim: true,
+      clientsClaim: true
     }
   }
 };
