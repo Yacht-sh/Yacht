@@ -1,4 +1,4 @@
-![logo](https://raw.githubusercontent.com/Yacht-sh/Yacht/master/readme_media/Yacht_logo_1_dark.png "templates")
+![logo](https://raw.githubusercontent.com/yacht-sh/yacht/master/readme_media/Yacht_logo_1_dark.png "templates")
 
 ### I am currently working on this repo to bring it up to date, patience and we will get there soon. 
 ### wickedyoda
@@ -9,7 +9,7 @@ Yacht is a container management UI with a focus on templates and 1-click deploym
 
 **I'm currently rewriting the backend in Typescript as an attempt to have a language that more people would contribute to. You can follow development of that [here](https://github.com/yacht-sh/yacht-nuxt).**
 
-![Tempaltes](https://raw.githubusercontent.com/Yacht-sh/Yacht/master/readme_media/Yacht-Demo.gif "templates")
+![Tempaltes](https://raw.githubusercontent.com/yacht-sh/yacht/master/readme_media/Yacht-Demo.gif "templates")
 
 ## Installation:
 
