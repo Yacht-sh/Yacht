@@ -43,10 +43,10 @@ RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-
     chmod +x /usr/local/bin/docker-compose
 
 # Upgrade pip, setuptools, and wheel
-RUN pip3 install --upgrade pip setuptools wheel --break-system-packages
+RUN pip3 install --upgrade pip setuptools wheel 
 
 # Install Python packages from requirements.txt
-RUN pip3 install -r requirements.txt --no-cache-dir --verbose --break-system-packages
+RUN pip3 install --use-deprecated=legacy-resolver -r requirements.txt
 
 # Install SASS via gem
 RUN gem install sass --verbose
