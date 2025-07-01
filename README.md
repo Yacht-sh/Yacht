@@ -8,6 +8,7 @@
 </a>
 
 ## This application has been updated to build and publish images to GitHub Container Registry.
+- The `chartjs-plugin-crosshair` dependency is pinned to version 1.1.6 for compatibility with Chart.js 2.x.
 
 ## Yacht
 
