@@ -1,14 +1,14 @@
-# 🔀 Pull Request Proposal: Merge `wickedyoda/yacht` Improvements into `SelfhostedPro/yacht`
+# 🔀 Pull Request Proposal: Merge `yacht-sh/yacht` Improvements into `yacht-sh/yacht`
 
 ## 🧠 Summary
 
-This pull request introduces substantial architectural and security improvements to the Yacht project. The fork maintained at `wickedyoda/yacht` shifts the backend toward a TypeScript-based implementation while preserving core frontend functionality. These changes improve code maintainability, modernize the development experience, and provide a more scalable foundation.
+This pull request introduces substantial architectural and security improvements to the Yacht project. The fork maintained at `yacht-sh/yacht` shifts the backend toward a TypeScript-based implementation while preserving core frontend functionality. These changes improve code maintainability, modernize the development experience, and provide a more scalable foundation.
 
 ---
 
 ## ✅ Key Differences
 
-| Category           | `SelfhostedPro/yacht`                      | `wickedyoda/yacht`                                  |
+| Category           | `yacht-sh/yacht`                      | `yacht-sh/yacht`                                  |
 |--------------------|--------------------------------------------|------------------------------------------------------|
 | **Backend**        | Python (Flask)                             | TypeScript (Node.js with Express)                   |
 | **Front-end**      | Vue.js                                     | Vue.js (retained, potentially updated)              |
@@ -60,7 +60,7 @@ This pull request introduces substantial architectural and security improvements
 
 ---
 
-**GitHub:** https://github.com/wickedyoda/yacht
+**GitHub:** https://github.com/yacht-sh/yacht
 
 ## 📜 Extended Summary
 

@@ -106,7 +106,7 @@
                   <v-list-item-title>Edit</v-list-item-title>
                 </v-list-item>
                 <v-list-item
-                  v-if="!item.Config.Image.includes('selfhostedpro/yacht')"
+                  v-if="!item.Config.Image.includes('yacht-sh/yacht')"
                   @click="Update(item.name)"
                 >
                   <v-list-item-icon>

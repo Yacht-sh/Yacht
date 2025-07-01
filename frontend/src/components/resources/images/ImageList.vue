@@ -28,7 +28,7 @@
               <v-text-field
                 label="Image"
                 class="mx-5"
-                placeholder="selfhostedpro/yacht:latest"
+                placeholder="yacht-sh/yacht:latest"
                 required
                 v-model="form.image"
               >
