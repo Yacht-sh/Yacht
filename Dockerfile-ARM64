@@ -1,5 +1,5 @@
 # Build Vue.js frontend
-FROM node:20 AS build-stage
+FROM node:20 as build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
@@ -11,7 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build --verbose
 
 # Setup Container and install Flask backend
-FROM python:3.11-slim AS deploy-stage
+FROM python:3.11-slim as deploy-stage
 
 # Set environment variables
 ENV PYTHONIOENCODING=UTF-8
@@ -24,7 +24,6 @@ COPY ./backend/requirements.txt ./
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    pkg-config \
     libffi-dev \
     libssl-dev \
     libpq-dev \
@@ -43,10 +42,10 @@ RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-
     chmod +x /usr/local/bin/docker-compose
 
 # Upgrade pip, setuptools, and wheel
-RUN pip3 install --upgrade pip setuptools wheel --break-system-packages
+RUN pip3 install --upgrade pip setuptools wheel
 
 # Install Python packages from requirements.txt
-RUN pip3 install -r requirements.txt --no-cache-dir --verbose --break-system-packages
+RUN pip3 install -r requirements.txt --no-cache-dir --verbose
 
 # Install SASS via gem
 RUN gem install sass --verbose

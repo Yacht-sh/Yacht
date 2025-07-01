@@ -51,7 +51,7 @@
         <v-icon size="200%" class="pa-2">mdi-file-document</v-icon>
       </a>
       <br />
-      <a :href="'https://' + 'github.com/SelfhostedPro/Yacht'">
+      <a :href="'https://' + 'github.com/wickedyoda/Yacht'">
         <v-icon size="200%" class="pa-2">mdi-github</v-icon>
       </a>
     </template>
