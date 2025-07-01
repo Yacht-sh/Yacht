@@ -88,31 +88,29 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
     },
     readAppStats() {
-        this.statConnection = new EventSource(
-          `/api/apps/stats`
+      this.statConnection = new EventSource(`/api/apps/stats`);
+      this.statConnection.addEventListener("update", event => {
+        let statsGroup = JSON.parse(event.data);
+        if (!(statsGroup.name in this.stats)) {
+          this.stats[statsGroup.name] = {};
+          this.stats[statsGroup.name].name = statsGroup.name;
+        }
+        this.stats[statsGroup.name].cpu_percent = Math.round(
+          statsGroup.cpu_percent
         );
-        this.statConnection.addEventListener("update", event => {
-          let statsGroup = JSON.parse(event.data);
-          if (!(statsGroup.name in this.stats)) {
-            this.stats[statsGroup.name] = {};
-            this.stats[statsGroup.name].name = statsGroup.name;
-          }
-          this.stats[statsGroup.name].cpu_percent = Math.round(
-            statsGroup.cpu_percent
-          );
-          this.stats[statsGroup.name].mem_percent = Math.round(
-            statsGroup.mem_percent
-          );
-          this.stats[statsGroup.name].mem_current = this.formatBytes(
-            statsGroup.mem_current,
-            2
-          );
-          this.stats[statsGroup.name].mem_total = this.formatBytes(
-            statsGroup.mem_total,
-            2
-          );
-          this.$forceUpdate();
-        });
+        this.stats[statsGroup.name].mem_percent = Math.round(
+          statsGroup.mem_percent
+        );
+        this.stats[statsGroup.name].mem_current = this.formatBytes(
+          statsGroup.mem_current,
+          2
+        );
+        this.stats[statsGroup.name].mem_total = this.formatBytes(
+          statsGroup.mem_total,
+          2
+        );
+        this.$forceUpdate();
+      });
     },
     refresh() {
       this.closeStats();
