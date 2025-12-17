@@ -37,7 +37,8 @@ RUN apk add --no-cache \
     python3-dev \
     ruby-dev \
     nginx \
-    curl
+    curl \
+    linux-headers
 
 # Install Docker Compose 2.x as a standalone binary
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
@@ -59,6 +60,17 @@ RUN apk del --purge build-base && \
 # Copy the backend code
 COPY ./backend/ ./
 
-# Expose ports and define the command to run the application
-EXPOSE 5000
-CMD ["python3", "app.py"]
+# Copy frontend build artifacts
+COPY --from=build-stage /app/dist /app
+
+# Copy nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose ports
+EXPOSE 8000
+
+# Start script
+COPY backend/start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
