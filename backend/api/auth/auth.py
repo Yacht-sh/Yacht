@@ -1,44 +1,54 @@
-from typing import Tuple
-
 from api.settings import Settings
-
-from fastapi import HTTPException
-from fastapi_jwt_auth.exceptions import JWTDecodeError
-
-from passlib import pwd
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from fastapi import HTTPException, Depends, status
+from api.auth.jwt import get_auth_wrapper
+from sqlalchemy.orm import Session
+from api.db.database import SessionLocal
+from api.db.models.users import User
 
 settings = Settings()
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-def verify_and_update_password(
-    plain_password: str, hashed_password: str
-) -> Tuple[bool, str]:
-    return pwd_context.verify_and_update(plain_password, hashed_password)
+# This is a compatibility layer to replace fastapi-jwt-auth usage in other files
+# The function `auth_check` was used in routers.
+# Original signature: def auth_check(Authorize):
+# Now Authorize will be our AuthWrapper.
 
-
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def generate_password() -> str:
-    return pwd.genword()
-
-
-def auth_check(Authorize):
+def auth_check(Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_setting = str(settings.DISABLE_AUTH)
     if auth_setting.lower() == "true":
         return
     else:
-        try:
-            return Authorize.jwt_required()
-        except JWTDecodeError as exc:
-            status_code = exc.status_code
-            if (
-                exc.message == "Signature verification failed"
-                or exc.message == "Signature has expired"
-            ):
-                status_code = 401
-            raise HTTPException(status_code=status_code, detail=exc.message)
+        # AuthWrapper.jwt_required() raises HTTPException if invalid
+        Authorize.jwt_required()
+
+def check_permission(permission_name: str, Authorize: get_auth_wrapper, db: Session):
+    """
+    Checks if the current user has the specified permission.
+    Admins (is_superuser) always have access.
+    """
+    auth_setting = str(settings.DISABLE_AUTH)
+    if auth_setting.lower() == "true":
+        return True
+
+    username = Authorize.get_jwt_subject()
+    user = db.query(User).filter(User.username == username).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    if user.is_superuser:
+        return True
+
+    if getattr(user, permission_name, False):
+        return True
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=f"User lacks permission: {permission_name}"
+    )

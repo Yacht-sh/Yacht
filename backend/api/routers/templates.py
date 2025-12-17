@@ -11,7 +11,7 @@ from api.db.database import engine
 from api.utils.auth import get_db
 from api.auth.auth import auth_check
 
-from fastapi_jwt_auth import AuthJWT
+from api.auth.jwt import get_auth_wrapper
 
 Base.metadata.create_all(bind=engine)
 
@@ -23,7 +23,7 @@ router = APIRouter()
     "/",
     response_model=List[schemas.TemplateRead],
 )
-def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def index(db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     templates = crud.get_templates(db=db)
     return templates
@@ -33,7 +33,7 @@ def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     "/{id}",
     response_model=schemas.TemplateItems,
 )
-def show(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def show(id: int, db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     template = crud.get_template_by_id(db=db, id=id)
     return template
@@ -43,7 +43,7 @@ def show(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends())
     "/{id}",
     response_model=schemas.TemplateRead,
 )
-def delete(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def delete(id: int, db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return crud.delete_template(db=db, template_id=id)
 
@@ -52,7 +52,7 @@ def delete(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends(
 def add_template(
     template: schemas.TemplateBase,
     db: Session = Depends(get_db),
-    Authorize: AuthJWT = Depends(),
+    Authorize: get_auth_wrapper = Depends(get_auth_wrapper),
 ):
     auth_check(Authorize)
     existing_template = crud.get_template(db=db, url=template.url)
@@ -66,7 +66,7 @@ def add_template(
     response_model=schemas.TemplateRead,
 )
 def refresh_template(
-    id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+    id: int, db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)
 ):
     auth_check(Authorize)
     return crud.refresh_template(db=db, template_id=id)
@@ -77,7 +77,7 @@ def refresh_template(
     response_model=schemas.TemplateItem,
 )
 def read_app_template(
-    id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+    id: int, db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)
 ):
     auth_check(Authorize)
     return crud.read_app_template(db=db, app_id=id)

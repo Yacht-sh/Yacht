@@ -17,7 +17,7 @@ from api.actions.apps import _update_self, check_self_update
 
 from api.settings import Settings
 
-from fastapi_jwt_auth import AuthJWT
+from api.auth.jwt import get_auth_wrapper
 
 
 containers.Base.metadata.create_all(bind=engine)
@@ -33,7 +33,7 @@ router = APIRouter()
     operation_id="authorize",
 )
 def read_template_variables(
-    db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+    db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)
 ):
     auth_check(Authorize)
     return crud.read_template_variables(db=db)
@@ -46,7 +46,7 @@ def read_template_variables(
 def set_template_variables(
     new_variables: List[schemas.TemplateVariables],
     db: Session = Depends(get_db),
-    Authorize: AuthJWT = Depends(),
+    Authorize: get_auth_wrapper = Depends(get_auth_wrapper),
 ):
     auth_check(Authorize)
     return crud.set_template_variables(new_variables=new_variables, db=db)
@@ -56,7 +56,7 @@ def set_template_variables(
     "/export",
     response_model=schemas.Import_Export,
 )
-def export_settings(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def export_settings(db: Session = Depends(get_db), Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return scrud.export_settings(db=db)
 
@@ -67,7 +67,7 @@ def export_settings(db: Session = Depends(get_db), Authorize: AuthJWT = Depends(
 def import_settings(
     db: Session = Depends(get_db),
     upload: UploadFile = File(...),
-    Authorize: AuthJWT = Depends(),
+    Authorize: get_auth_wrapper = Depends(get_auth_wrapper),
 ):
     auth_check(Authorize)
     return scrud.import_settings(db=db, upload=upload)
@@ -76,7 +76,7 @@ def import_settings(
 @router.get(
     "/prune/{resource}",
 )
-def prune_resources(resource: str, Authorize: AuthJWT = Depends()):
+def prune_resources(resource: str, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.prune_resources(resource)
 
@@ -84,7 +84,7 @@ def prune_resources(resource: str, Authorize: AuthJWT = Depends()):
 @router.get(
     "/update",
 )
-def update_self(background_tasks: BackgroundTasks, Authorize: AuthJWT = Depends()):
+def update_self(background_tasks: BackgroundTasks, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return _update_self(background_tasks)
 
@@ -92,6 +92,6 @@ def update_self(background_tasks: BackgroundTasks, Authorize: AuthJWT = Depends(
 @router.get(
     "/check/update",
 )
-def _check_self_update(Authorize: AuthJWT = Depends()):
+def _check_self_update(Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return check_self_update()

@@ -10,50 +10,69 @@
               <v-spacer></v-spacer>
             </v-toolbar>
             <v-card-text>
-              <v-form @keyup.native.enter="onSubmit()">
-                <ValidationProvider
-                  name="username"
-                  rules="required"
-                  v-slot="{ errors, valid }"
-                >
-                  <v-text-field
-                    label="Email"
-                    v-model="username"
-                    :error-messages="errors"
-                    :success="valid"
-                    required
-                  />
-                </ValidationProvider>
+              <div v-if="!requires2FA">
+                <v-form @keyup.native.enter="onSubmit()">
+                  <ValidationProvider
+                    name="username"
+                    rules="required"
+                    v-slot="{ errors, valid }"
+                  >
+                    <v-text-field
+                      label="Email"
+                      v-model="username"
+                      :error-messages="errors"
+                      :success="valid"
+                      required
+                    />
+                  </ValidationProvider>
 
-                <ValidationProvider
-                  name="password"
-                  rules="required"
-                  v-slot="{ errors, valid }"
-                >
+                  <ValidationProvider
+                    name="password"
+                    rules="required"
+                    v-slot="{ errors, valid }"
+                  >
+                    <v-text-field
+                      label="Password"
+                      v-model="password"
+                      :error-messages="errors"
+                      :success="valid"
+                      :type="show ? 'text' : 'password'"
+                      :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+                      clearable
+                      required
+                      @click:append="show = !show"
+                    />
+                  </ValidationProvider>
+                  <v-btn
+                    class="float-right"
+                    @click="onSubmit()"
+                    color="primary"
+                    :disabled="invalid || !validated"
+                    >Login</v-btn
+                  >
+                </v-form>
+              </div>
+              <div v-else>
+                <p>Please enter your 2FA code.</p>
+                <v-form @keyup.native.enter="onSubmit2FA()">
                   <v-text-field
-                    label="Password"
-                    v-model="password"
-                    :error-messages="errors"
-                    :success="valid"
-                    :type="show ? 'text' : 'password'"
-                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-                    clearable
+                    label="2FA Code"
+                    v-model="otpToken"
                     required
-                    @click:append="show = !show"
+                    outlined
+                    autofocus
                   />
-                </ValidationProvider>
-                <v-btn
-                  class="float-right"
-                  @click="onSubmit()"
-                  color="primary"
-                  :disabled="invalid || !validated"
-                  >Login</v-btn
-                >
-              </v-form>
+                  <v-btn class="float-right" @click="onSubmit2FA()" color="primary">Verify</v-btn>
+                </v-form>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
+
+      <v-snackbar v-model="errorSnackbar" color="error">
+        {{ errorMessage }}
+      </v-snackbar>
     </v-container>
   </ValidationObserver>
 </template>
@@ -64,6 +83,7 @@ import darkLogo from "@/assets/logo.svg";
 import { ValidationObserver, ValidationProvider } from "vee-validate";
 import { mapActions } from "vuex";
 import { themeLogo } from "../../config.js";
+import axios from 'axios';
 
 export default {
   components: {
@@ -74,21 +94,62 @@ export default {
     return {
       username: "",
       password: "",
-      show: false
+      show: false,
+      requires2FA: false,
+      otpToken: '',
+      errorSnackbar: false,
+      errorMessage: ''
     };
   },
   methods: {
     ...mapActions({
-      login: "auth/AUTH_REQUEST",
+      loginAction: "auth/AUTH_REQUEST",
       authCheck: "auth/AUTH_CHECK"
     }),
 
-    onSubmit() {
-      this.login({
-        username: this.username,
-        password: this.password
-      });
+    async onSubmit() {
+      // We will handle the login request manually here to intercept 2FA requirement
+      try {
+        const response = await axios.post('/api/auth/login_cookie', {
+          username: this.username,
+          password: this.password
+        });
+
+        if (response.data.login === '2fa_required') {
+          this.requires2FA = true;
+        } else if (response.data.login === 'successful') {
+           // Dispatch action to update state, but we already called API
+           // So we might need to adjust the Vuex action or just commit directly
+           // Assuming AUTH_REQUEST does the API call usually.
+           // Let's manually trigger the success path in Vuex or reload
+           this.$store.commit("auth/AUTH_SUCCESS", response.data);
+           this.$router.push("/");
+        }
+      } catch (err) {
+        this.errorMessage = err.response ? err.response.data.detail : "Login failed";
+        this.errorSnackbar = true;
+        this.$store.commit("auth/AUTH_ERROR");
+      }
     },
+
+    async onSubmit2FA() {
+       try {
+        const response = await axios.post('/api/auth/login_cookie', {
+          username: this.username,
+          password: this.password,
+          otp_token: this.otpToken
+        });
+
+        if (response.data.login === 'successful') {
+           this.$store.commit("auth/AUTH_SUCCESS", response.data);
+           this.$router.push("/");
+        }
+      } catch (err) {
+        this.errorMessage = err.response ? err.response.data.detail : "Verification failed";
+        this.errorSnackbar = true;
+      }
+    },
+
     themeLogo() {
       if (themeLogo) {
         return themeLogo;
@@ -102,9 +163,6 @@ export default {
   mounted() {
     this.authCheck();
   }
-  // created() {
-  //   this.authCheck();
-  // // }
 };
 </script>
 
@@ -112,34 +170,5 @@ export default {
 .main-logo {
   max-width: 107px;
   max-height: 72px;
-}
-.form-signin {
-  width: 100%;
-  max-width: 330px;
-  padding: 15px;
-  margin: auto;
-}
-.form-signin .checkbox {
-  font-weight: 400;
-}
-.form-signin .form-control {
-  position: relative;
-  box-sizing: border-box;
-  height: auto;
-  padding: 10px;
-  font-size: 16px;
-}
-.form-signin .form-control:focus {
-  z-index: 2;
-}
-.form-signin input[type="text"] {
-  margin-bottom: -1px;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-.form-signin input[type="password"] {
-  margin-bottom: 10px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 </style>

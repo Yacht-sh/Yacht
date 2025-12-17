@@ -1,6 +1,12 @@
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from sh import docker_compose
+try:
+    from sh import docker_compose
+except ImportError:
+    # Fallback or mock if docker-compose is not installed in the environment
+    # For now, we'll just define it as None or a dummy function to avoid ImportErrors during setup
+    docker_compose = None
+
 import os
 import yaml
 import pathlib

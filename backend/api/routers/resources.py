@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends
-from fastapi_jwt_auth import AuthJWT
+from api.auth.jwt import get_auth_wrapper
 
 from api.actions import resources
 from api.db.schemas.resources import ImageWrite, VolumeWrite, NetworkWrite
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get(
     "/images/",
 )
-def get_images(Authorize: AuthJWT = Depends()):
+def get_images(Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_images()
 
@@ -21,7 +21,7 @@ def get_images(Authorize: AuthJWT = Depends()):
 @router.post(
     "/images/",
 )
-def write_image(image: ImageWrite, Authorize: AuthJWT = Depends()):
+def write_image(image: ImageWrite, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.write_image(image.image)
 
@@ -29,7 +29,7 @@ def write_image(image: ImageWrite, Authorize: AuthJWT = Depends()):
 @router.get(
     "/images/{image_id}",
 )
-def get_image(image_id, Authorize: AuthJWT = Depends()):
+def get_image(image_id, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_image(image_id)
 
@@ -37,7 +37,7 @@ def get_image(image_id, Authorize: AuthJWT = Depends()):
 @router.get(
     "/images/{image_id}/pull",
 )
-def pull_image(image_id, Authorize: AuthJWT = Depends()):
+def pull_image(image_id, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.update_image(image_id)
 
@@ -45,7 +45,7 @@ def pull_image(image_id, Authorize: AuthJWT = Depends()):
 @router.delete(
     "/images/{image_id}",
 )
-def delete_image(image_id, Authorize: AuthJWT = Depends()):
+def delete_image(image_id, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.delete_image(image_id)
 
@@ -54,7 +54,7 @@ def delete_image(image_id, Authorize: AuthJWT = Depends()):
 @router.get(
     "/volumes/",
 )
-def get_volumes(Authorize: AuthJWT = Depends()):
+def get_volumes(Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_volumes()
 
@@ -62,7 +62,7 @@ def get_volumes(Authorize: AuthJWT = Depends()):
 @router.post(
     "/volumes/",
 )
-def write_volume(name: VolumeWrite, Authorize: AuthJWT = Depends()):
+def write_volume(name: VolumeWrite, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.write_volume(name.name)
 
@@ -70,7 +70,7 @@ def write_volume(name: VolumeWrite, Authorize: AuthJWT = Depends()):
 @router.get(
     "/volumes/{volume_name}",
 )
-def get_volume(volume_name, Authorize: AuthJWT = Depends()):
+def get_volume(volume_name, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_volume(volume_name)
 
@@ -78,7 +78,7 @@ def get_volume(volume_name, Authorize: AuthJWT = Depends()):
 @router.delete(
     "/volumes/{volume_name}",
 )
-def delete_volume(volume_name, Authorize: AuthJWT = Depends()):
+def delete_volume(volume_name, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.delete_volume(volume_name)
 
@@ -87,7 +87,7 @@ def delete_volume(volume_name, Authorize: AuthJWT = Depends()):
 @router.get(
     "/networks/",
 )
-def get_networks(Authorize: AuthJWT = Depends()):
+def get_networks(Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_networks()
 
@@ -95,7 +95,7 @@ def get_networks(Authorize: AuthJWT = Depends()):
 @router.post(
     "/networks/",
 )
-def write_network(form: NetworkWrite, Authorize: AuthJWT = Depends()):
+def write_network(form: NetworkWrite, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.write_network(form)
 
@@ -103,7 +103,7 @@ def write_network(form: NetworkWrite, Authorize: AuthJWT = Depends()):
 @router.get(
     "/networks/{network_name}",
 )
-def get_network(network_name, Authorize: AuthJWT = Depends()):
+def get_network(network_name, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.get_network(network_name)
 
@@ -111,6 +111,6 @@ def get_network(network_name, Authorize: AuthJWT = Depends()):
 @router.delete(
     "/networks/{network_name}",
 )
-def delete_network(network_name, Authorize: AuthJWT = Depends()):
+def delete_network(network_name, Authorize: get_auth_wrapper = Depends(get_auth_wrapper)):
     auth_check(Authorize)
     return resources.delete_network(network_name)

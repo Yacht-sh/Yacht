@@ -1,8 +1,6 @@
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from api.db.models.settings import TokenBlacklist
@@ -14,52 +12,19 @@ from api.db.database import SessionLocal
 from api.db.schemas.users import UserCreate
 from api.db.crud.settings import generate_secret_key
 from api.db.crud.users import create_user, get_users
-from api.routers import apps, app_settings, compose, resources, templates, users
+from api.routers import apps, app_settings, compose, resources, templates, users, smtp, auth_2fa, watchtower
 from api.db.crud.templates import read_template_variables, set_template_variables
+from api.services.watchtower import start_scheduler, stop_scheduler
 
 app = FastAPI(root_path="/api")
 
 settings = Settings()
 
-
-class jwtSettings(BaseModel):
-    authjwt_secret_key: str = generate_secret_key(db=SessionLocal())
-    authjwt_token_location: set = {"headers", "cookies"}
-    authjwt_cookie_secure: bool = False
-    authjwt_cookie_csrf_protect: bool = True
-    authjwt_access_token_expires: int = int(settings.ACCESS_TOKEN_EXPIRES)
-    authjwt_refresh_token_expires: int = int(settings.REFRESH_TOKEN_EXPIRES)
-    authjwt_cookie_samesite: str = settings.SAME_SITE_COOKIES
-    authjwt_denylist_enabled: bool = True
-    authjwt_denylist_token_checks: set = {"access", "refresh"}
-
-
-@AuthJWT.load_config
-def get_config():
-    return jwtSettings()
-
-
-@AuthJWT.token_in_denylist_loader
-def check_if_token_in_denylist(decrypted_token):
-    db = SessionLocal()
-    jti = decrypted_token["jti"]
-    entry = db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
-    if entry:
-        return True
-
-
-@app.exception_handler(AuthJWTException)
-def authjwt_exception_handler(request: Request, exc: AuthJWTException):
-    status_code = exc.status_code
-    if (
-        exc.message == "Signature verification failed"
-        or exc.message == "Signature has expired"
-    ):
-        status_code = 401
-    return JSONResponse(status_code=status_code, content={"detail": exc.message})
-
-
+# Register Routers
 app.include_router(users.router, prefix="/auth", tags=["users"])
+app.include_router(smtp.router, prefix="/settings/smtp", tags=["smtp"])
+app.include_router(auth_2fa.router, prefix="/auth/2fa", tags=["2fa"])
+app.include_router(watchtower.router, prefix="/watchtower", tags=["watchtower"])
 app.include_router(apps.router, prefix="/apps", tags=["apps"])
 app.include_router(
     resources.router,
@@ -77,6 +42,7 @@ app.include_router(app_settings.router, prefix="/settings", tags=["settings"])
 
 @app.on_event("startup")
 async def startup(db: Session = Depends(get_db)):
+    start_scheduler()
     generate_secret_key(db=SessionLocal())
     users_exist = get_users(db=SessionLocal())
     print(
@@ -109,6 +75,9 @@ async def startup(db: Session = Depends(get_db)):
             t_var_list.append(template_variables)
         set_template_variables(new_variables=t_var_list, db=SessionLocal())
 
+@app.on_event("shutdown")
+def shutdown_event():
+    stop_scheduler()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
