@@ -69,6 +69,13 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Expose ports
 EXPOSE 8000
 
+# Create user and group 'abc' for Nginx
+RUN addgroup -S abc && adduser -S abc -G abc
+
+# Create Nginx temp directories and set permissions
+RUN mkdir -p /var/www/client_body_temp /var/www/proxy_temp && \
+    chown -R abc:abc /var/www
+
 # Start script
 COPY backend/start.sh /start.sh
 RUN chmod +x /start.sh
