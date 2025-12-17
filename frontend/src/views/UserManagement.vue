@@ -96,7 +96,7 @@
 
 <script>
 import axios from 'axios';
-import Nav from "../components/Nav";
+import Nav from "../components/userSettings/UserSettingsNav.vue";
 
 export default {
   components: {
