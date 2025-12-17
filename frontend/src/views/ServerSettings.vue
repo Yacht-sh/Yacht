@@ -33,6 +33,12 @@
                   <v-icon left class="mr-1">mdi-update</v-icon>
                   Update
                 </v-tab>
+                <v-tab class="text-left">
+                   <v-icon left class="mr-1">mdi-email</v-icon>SMTP
+                </v-tab>
+                <v-tab class="text-left">
+                  <v-icon left class="mr-1">mdi-shield-lock</v-icon>Security
+                </v-tab>
               </v-tabs>
               <transition
                 name="slide"
@@ -57,6 +63,12 @@
                   <v-tab-item>
                     <Update />
                   </v-tab-item>
+                  <v-tab-item>
+                    <SMTPSettings @notify="notify" />
+                  </v-tab-item>
+                  <v-tab-item>
+                    <TwoFactor @notify="notify" />
+                  </v-tab-item>
                 </v-tabs-items>
               </transition>
             </div>
@@ -64,6 +76,10 @@
         </v-row>
         <v-card-text>Version: {{ version }}</v-card-text>
       </v-card>
+
+      <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+        {{ snackbar.message }}
+      </v-snackbar>
     </v-container>
   </v-card>
 </template>
@@ -74,19 +90,36 @@ import Variables from "../components/serverSettings/ServerVariables";
 import Theme from "../components/serverSettings/Theme";
 import Prune from "../components/serverSettings/Prune";
 import Update from "../components/serverSettings/ServerUpdate";
+import SMTPSettings from "../components/settings/SMTPSettings";
+import TwoFactor from "../components/settings/TwoFactor";
+
 export default {
   components: {
-    Info: Info,
-    Variables: Variables,
-    Theme: Theme,
-    Prune: Prune,
-    Update: Update
+    Info,
+    Variables,
+    Theme,
+    Prune,
+    Update,
+    SMTPSettings,
+    TwoFactor
   },
   data() {
     return {
       SettingsTab: 1,
-      version: process.env.VUE_APP_VERSION || "unreleased"
+      version: process.env.VUE_APP_VERSION || "unreleased",
+      snackbar: {
+        show: false,
+        message: '',
+        color: 'info'
+      }
     };
+  },
+  methods: {
+    notify(data) {
+      this.snackbar.message = data.message;
+      this.snackbar.color = data.color;
+      this.snackbar.show = true;
+    }
   }
 };
 </script>

@@ -105,6 +105,11 @@ export default {
         ]
       },
       {
+        to: "/users",
+        icon: "mdi-account-group",
+        text: "Users"
+      },
+      {
         to: "/settings/info",
         icon: "mdi-cog",
         text: "Settings"

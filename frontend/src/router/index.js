@@ -52,6 +52,7 @@ import ServerVariables from "../components/serverSettings/ServerVariables.vue";
 import Prune from "../components/serverSettings/Prune.vue";
 import ServerUpdate from "../components/serverSettings/ServerUpdate.vue";
 import Theme from "../components/serverSettings/Theme.vue";
+import UserManagement from "../views/UserManagement.vue";
 // import { component } from "vue/types/umd";
 // import { component } from "vue/types/umd";
 
@@ -178,6 +179,11 @@ const routes = [
         component: ChangePasswordForm
       }
     ]
+  },
+  {
+    path: "/users",
+    component: UserManagement,
+    name: "User Management"
   },
   {
     path: "/settings",
