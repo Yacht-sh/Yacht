@@ -6,7 +6,7 @@ ENV VUE_APP_VERSION=${VUE_APP_VERSION}
 
 WORKDIR /app
 COPY ./frontend/package*.json ./
-RUN npm install --verbose
+RUN npm install --legacy-peer-deps --verbose
 COPY ./frontend/ ./
 RUN npm run build --verbose
 
