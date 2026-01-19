@@ -352,7 +352,7 @@ def app_update(app_name):
     volumes = {"/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}}
     try:
         updater = dclient.containers.run(
-            image="containrrr/watchtower:latest",
+            image="ghcr.io/nicholas-fedor/watchtower:latest",
             command="--cleanup --run-once " + old.name,
             remove=True,
             detach=True,
@@ -412,7 +412,7 @@ def update_self_in_background(yacht):
     volumes = {"/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}}
     print("**** Updating " + yacht.name + "****")
     dclient.containers.run(
-        image="containrrr/watchtower:latest",
+        image="ghcr.io/nicholas-fedor/watchtower:latest",
         command="--cleanup --run-once " + yacht.name,
         remove=True,
         detach=True,
