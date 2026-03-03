@@ -32,7 +32,7 @@ for declarative_base in [models.Base]:
 
 target_metadata = combined_meta_data
 config.set_main_option(
-    "sqlalchemy.url", os.environ.get("DATABASE_URL", "sqlite:///config/data.sqlite")
+    "sqlalchemy.url", os.environ.get("DATABASE_URL", "sqlite:////config/data.sqlite")
 )
 
 # other values from the config, defined by the needs of env.py,

@@ -10,7 +10,7 @@ from api.settings import Settings
 from api.utils.auth import get_db
 from api.db.models.containers import TemplateVariables
 from api.db.models.settings import SecretKey
-from api.db.database import SessionLocal
+from api.db.database import SessionLocal, engine, Base
 from api.db.schemas.users import UserCreate
 from api.db.crud.settings import generate_secret_key
 from api.db.crud.users import create_user, get_users
@@ -77,6 +77,7 @@ app.include_router(app_settings.router, prefix="/settings", tags=["settings"])
 
 @app.on_event("startup")
 async def startup(db: Session = Depends(get_db)):
+    Base.metadata.create_all(bind=engine)
     generate_secret_key(db=SessionLocal())
     users_exist = get_users(db=SessionLocal())
     print(

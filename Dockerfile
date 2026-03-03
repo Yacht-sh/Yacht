@@ -1,26 +1,27 @@
 # Build Vue.js frontend
-FROM node:20 AS build-stage
+FROM node:20-bookworm-slim AS build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
 
 WORKDIR /app
 COPY ./frontend/package*.json ./
-RUN npm install --verbose
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 COPY ./frontend/ ./
-RUN npm run build --verbose
+RUN npm run build
 
-# Setup Container and install Flask backend
+# Runtime image
 FROM python:3.11-slim AS deploy-stage
 
-# Set environment variables
+ARG DOCKER_COMPOSE_VERSION=v2.40.3
+
 ENV PYTHONIOENCODING=UTF-8
 ENV THEME=Default
+ENV PYTHONPATH=/api
 
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
-# Install build dependencies and system libraries
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -33,31 +34,41 @@ RUN apt-get update && \
     zlib1g-dev \
     libyaml-dev \
     python3-dev \
-    ruby-dev \
     nginx \
-    curl && \
+    curl \
+    ca-certificates \
+    bash && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Docker Compose 2.x as a standalone binary
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+RUN set -eux; \
+    arch="$(uname -m)"; \
+    case "${arch}" in \
+      x86_64) compose_arch="x86_64" ;; \
+      aarch64) compose_arch="aarch64" ;; \
+      armv7l) compose_arch="armv7" ;; \
+      armv6l) compose_arch="armv6" ;; \
+      ppc64le) compose_arch="ppc64le" ;; \
+      s390x) compose_arch="s390x" ;; \
+      riscv64) compose_arch="riscv64" ;; \
+      *) echo "Unsupported architecture: ${arch}" && exit 1 ;; \
+    esac; \
+    curl -fL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" -o /usr/local/bin/docker-compose; \
     chmod +x /usr/local/bin/docker-compose
 
-# Upgrade pip, setuptools, and wheel
-RUN pip3 install --upgrade pip setuptools wheel 
+RUN pip3 install --upgrade pip setuptools wheel && \
+    pip3 install --use-deprecated=legacy-resolver --no-cache-dir -r requirements.txt
 
-# Install Python packages from requirements.txt
-RUN pip3 install --use-deprecated=legacy-resolver -r requirements.txt
+RUN groupadd -r abc && useradd -r -g abc abc
 
-# Install SASS via gem
-RUN gem install sass --verbose
+COPY ./backend/ /api/
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./docker/start.sh /usr/local/bin/start.sh
+COPY --from=build-stage /app/dist /app
 
-# Clean up build dependencies
-RUN apt-get purge -y --auto-remove build-essential python3-dev ruby-dev && \
-    rm -rf /root/.cache /tmp/*
+RUN chmod +x /usr/local/bin/start.sh && \
+    mkdir -p /config/compose /var/www/client_body_temp /var/www/proxy_temp && \
+    chown -R abc:abc /app /config /var/www
 
-# Copy the backend code
-COPY ./backend/ ./
-
-# Expose ports and define the command to run the application
-EXPOSE 5000
-CMD ["python3", "app.py"]
+VOLUME /config
+EXPOSE 8000
+CMD ["/usr/local/bin/start.sh"]

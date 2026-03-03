@@ -26,6 +26,7 @@ jobs:
 
       - name: Cache Docker layers
         uses: actions/cache@v4
+        continue-on-error: true
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -39,6 +40,9 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Normalize image owner
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -48,7 +52,7 @@ jobs:
           build-args: |
             VUE_APP_VERSION=devel-${{ steps.current-time.outputs.formattedTime }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/yacht:devel
-            ghcr.io/${{ github.repository_owner }}/yacht:devel-${{ steps.current-time.outputs.formattedTime }}
+            ghcr.io/${{ env.OWNER_LC }}/yacht:devel
+            ghcr.io/${{ env.OWNER_LC }}/yacht:devel-${{ steps.current-time.outputs.formattedTime }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
