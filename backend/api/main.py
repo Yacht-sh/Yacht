@@ -42,10 +42,12 @@ def get_config():
 @AuthJWT.token_in_denylist_loader
 def check_if_token_in_denylist(decrypted_token):
     db = SessionLocal()
-    jti = decrypted_token["jti"]
-    entry = db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
-    if entry:
-        return True
+    try:
+        jti = decrypted_token["jti"]
+        entry = db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+        return entry is not None
+    finally:
+        db.close()
 
 
 @app.exception_handler(AuthJWTException)
@@ -78,8 +80,19 @@ app.include_router(app_settings.router, prefix="/settings", tags=["settings"])
 @app.on_event("startup")
 async def startup(db: Session = Depends(get_db)):
     Base.metadata.create_all(bind=engine)
-    generate_secret_key(db=SessionLocal())
-    users_exist = get_users(db=SessionLocal())
+    startup_db = SessionLocal()
+    try:
+        generate_secret_key(db=startup_db)
+        users_exist = get_users(db=startup_db)
+    finally:
+        startup_db.close()
+    print(
+        "DISABLE_AUTH = "
+        + str(settings.DISABLE_AUTH)
+        + " ("
+        + str(type(settings.DISABLE_AUTH))
+        + ")"
+    )
     if users_exist:
         pass
     else:
@@ -87,8 +100,16 @@ async def startup(db: Session = Depends(get_db)):
         user = UserCreate(
             username=settings.ADMIN_EMAIL, password=settings.ADMIN_PASSWORD
         )
-        create_user(db=SessionLocal(), user=user)
-    template_variables_exist = read_template_variables(SessionLocal())
+        create_user_db = SessionLocal()
+        try:
+            create_user(db=create_user_db, user=user)
+        finally:
+            create_user_db.close()
+    template_db = SessionLocal()
+    try:
+        template_variables_exist = read_template_variables(template_db)
+    finally:
+        template_db.close()
     if template_variables_exist:
         pass
     else:
@@ -100,7 +121,11 @@ async def startup(db: Session = Depends(get_db)):
                 variable=t.get("variable"), replacement=t.get("replacement")
             )
             t_var_list.append(template_variables)
-        set_template_variables(new_variables=t_var_list, db=SessionLocal())
+        template_update_db = SessionLocal()
+        try:
+            set_template_variables(new_variables=t_var_list, db=template_update_db)
+        finally:
+            template_update_db.close()
 
 
 if __name__ == "__main__":
