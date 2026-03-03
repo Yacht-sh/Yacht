@@ -14,7 +14,7 @@ import io
 import zipfile
 
 from api.settings import Settings
-from api.utils.compose import find_yml_files
+from api.utils.compose import find_yml_files, resolve_compose_project_path
 
 settings = Settings()
 
@@ -223,7 +223,8 @@ project.
 
 def get_compose(name):
     try:
-        files = find_yml_files(settings.COMPOSE_DIR + name)
+        project_dir = resolve_compose_project_path(name)
+        files = find_yml_files(project_dir)
     except Exception as exc:
         raise HTTPException(exc.status_code, exc.detail)
     for project, file in files.items():
@@ -269,12 +270,13 @@ the content of compose.content to it.
 
 
 def write_compose(compose):
-    if not os.path.exists(settings.COMPOSE_DIR + compose.name):
+    project_dir = resolve_compose_project_path(compose.name)
+    if not os.path.exists(project_dir):
         try:
-            pathlib.Path(settings.COMPOSE_DIR + compose.name).mkdir(parents=True)
+            pathlib.Path(project_dir).mkdir(parents=True)
         except Exception as exc:
             raise HTTPException(exc.status_code, exc.detail)
-    with open(settings.COMPOSE_DIR + compose.name + "/docker-compose.yml", "w") as f:
+    with open(os.path.join(project_dir, "docker-compose.yml"), "w") as f:
         try:
             f.write(compose.content)
             f.close()
@@ -296,29 +298,29 @@ it exists. This also deletes all files in the folder.
 
 
 def delete_compose(project_name):
-    if not os.path.exists("/" + settings.COMPOSE_DIR + project_name):
+    project_dir = resolve_compose_project_path(project_name)
+    compose_file = os.path.join(project_dir, "docker-compose.yml")
+
+    if not os.path.exists(project_dir):
         raise HTTPException(404, "Project directory not found.")
-    elif not os.path.exists(
-        "/" + settings.COMPOSE_DIR + project_name + "/docker-compose.yml"
-    ):
+    elif not os.path.exists(compose_file):
         raise HTTPException(404, "Project docker-compose.yml not found.")
     else:
         try:
-            with open(
-                "/" + settings.COMPOSE_DIR + project_name + "/docker-compose.yml"
-            ):
+            with open(compose_file):
                 pass
         except OSError as exc:
             raise HTTPException(400, exc.strerror)
     try:
-        shutil.rmtree("/" + settings.COMPOSE_DIR + project_name)
+        shutil.rmtree(project_dir)
     except Exception as exc:
         raise HTTPException(exc.status_code, exc.strerror)
     return get_compose_projects()
 
 
 def generate_support_bundle(project_name):
-    files = find_yml_files(settings.COMPOSE_DIR + project_name)
+    project_dir = resolve_compose_project_path(project_name)
+    files = find_yml_files(project_dir)
     if project_name in files:
         dclient = docker.from_env()
         stream = io.BytesIO()
