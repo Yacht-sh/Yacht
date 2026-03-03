@@ -6,9 +6,9 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 def compose_dir_check():
-    if not os.environ.get("COMPOSE_DIR", "config/compose/").endswith("/"):
+    if not os.environ.get("COMPOSE_DIR", "/config/compose/").endswith("/"):
         os.environ["COMPOSE_DIR"] += "/"
-    return os.environ.get("COMPOSE_DIR", "config/compose/")
+    return os.environ.get("COMPOSE_DIR", "/config/compose/")
 
 
 class Settings(BaseSettings):
@@ -41,6 +41,6 @@ class Settings(BaseSettings):
     if os.environ.get("BASE_TEMPLATE", None):
         BASE_TEMPLATE = os.environ.get("BASE_TEMPLATE")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "sqlite:///config/data.sqlite"
+        "DATABASE_URL", "sqlite:////config/data.sqlite"
     )
     COMPOSE_DIR = compose_dir_check()

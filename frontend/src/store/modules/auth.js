@@ -13,14 +13,27 @@ import {
 import axios from "axios";
 import router from "@/router/index";
 
+const storedUsername = localStorage.getItem("username");
+const normalizedStoredUsername =
+  storedUsername && storedUsername !== "undefined" && storedUsername !== "null"
+    ? storedUsername
+    : "";
+
+if (!normalizedStoredUsername && storedUsername) {
+  localStorage.removeItem("username");
+}
+
 const state = {
   status: "",
-  username: localStorage.getItem("username") || "",
+  username: normalizedStoredUsername,
   authDisabled: null
 };
 
 const getters = {
-  isAuthenticated: state => !!state.username,
+  isAuthenticated: state =>
+    !!state.username &&
+    state.username !== "undefined" &&
+    state.username !== "null",
   authStatus: state => state.status,
   getUsername: state => state.username
 };
@@ -33,7 +46,19 @@ const actions = {
       axios
         .post(url, credentials, { withCredentials: true })
         .then(resp => {
-          localStorage.setItem("username", resp.data.username);
+          const username = resp?.data?.username;
+          if (!username || username === "undefined" || username === "null") {
+            throw {
+              response: {
+                statusText: "Login Error",
+                data: {
+                  detail:
+                    "Invalid login response from /api/auth/login. Check reverse proxy config and ensure /api is not stripped."
+                }
+              }
+            };
+          }
+          localStorage.setItem("username", username);
           axios.defaults.withCredentials = true;
           axios.defaults.xsrfCookieName = "csrf_access_token";
           axios.defaults.xsrfHeaderName = "X-CSRF-TOKEN";

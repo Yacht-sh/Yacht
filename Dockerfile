@@ -1,61 +1,74 @@
 # Build Vue.js frontend
-FROM node:20-alpine as build-stage
+FROM node:20-bookworm-slim AS build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
 
 WORKDIR /app
 COPY ./frontend/package*.json ./
-RUN npm install --verbose
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 COPY ./frontend/ ./
-RUN npm run build --verbose
+RUN npm run build
 
-# Setup Container and install Flask
-FROM python:3.11-alpine as deploy-stage
+# Runtime image
+FROM python:3.11-slim AS deploy-stage
 
-# Set environment variables
+ARG DOCKER_COMPOSE_VERSION=v2.40.3
+
 ENV PYTHONIOENCODING=UTF-8
 ENV THEME=Default
+ENV PYTHONPATH=/api
 
 WORKDIR /api
 COPY ./backend/requirements.txt ./
 
-RUN apk add --no-cache \
-    build-base \
-    curl \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
     libffi-dev \
-    openssl-dev \
-    musl-dev \
-    postgresql-dev \
-    mysql-dev \
-    jpeg-dev \
-    zlib-dev \
-    yaml-dev \
+    libssl-dev \
+    libpq-dev \
+    default-libmysqlclient-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libyaml-dev \
     python3-dev \
-    ruby-dev \
-    nginx && \
-    pip3 install --upgrade pip setuptools wheel && \
-    pip3 install Cython && \
-    pip3 install --no-cache-dir --force-reinstall PyYAML==5.4.1 && \
-    pip3 install --use-pep517 aiostream==0.4.3 --no-cache-dir && \
-    pip3 install --use-pep517 --use-deprecated=legacy-resolver -r requirements.txt --no-cache-dir
+    nginx \
+    curl \
+    ca-certificates \
+    bash && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+RUN set -eux; \
+    arch="$(uname -m)"; \
+    case "${arch}" in \
+      x86_64) compose_arch="x86_64" ;; \
+      aarch64) compose_arch="aarch64" ;; \
+      armv7l) compose_arch="armv7" ;; \
+      armv6l) compose_arch="armv6" ;; \
+      ppc64le) compose_arch="ppc64le" ;; \
+      s390x) compose_arch="s390x" ;; \
+      riscv64) compose_arch="riscv64" ;; \
+      *) echo "Unsupported architecture: ${arch}" && exit 1 ;; \
+    esac; \
+    curl -fL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" -o /usr/local/bin/docker-compose; \
     chmod +x /usr/local/bin/docker-compose
 
-RUN gem install sass --verbose
+RUN pip3 install --upgrade pip setuptools wheel && \
+    pip3 install --use-deprecated=legacy-resolver --no-cache-dir -r requirements.txt
 
-RUN apk del --purge build-base && \
-    rm -rf /root/.cache /tmp/*
+RUN groupadd -r abc && useradd -r -g abc abc
 
-COPY ./backend/api ./
-COPY ./backend/alembic /alembic
-COPY root ./backend/alembic.ini /
-
-# Vue
+COPY ./backend/ /api/
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./docker/start.sh /usr/local/bin/start.sh
 COPY --from=build-stage /app/dist /app
-COPY nginx.conf /etc/nginx/
 
-# Expose
+RUN chmod +x /usr/local/bin/start.sh && \
+    mkdir -p /config/compose /var/www/client_body_temp /var/www/proxy_temp && \
+    chown -R abc:abc /app /config /var/www
+
 VOLUME /config
 EXPOSE 8000
+CMD ["/usr/local/bin/start.sh"]
