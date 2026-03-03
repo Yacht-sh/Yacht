@@ -135,17 +135,19 @@ const actions = {
       commit(AUTH_REQUEST);
       const url = "/api/auth/me";
       axios
-        .post(url, credentials)
+        .post(url, credentials, { withCredentials: true })
         .then(resp => {
           localStorage.setItem("username", resp.data.username);
           commit(AUTH_SUCCESS, resp);
           resolve(resp);
         })
+        .catch(err => {
+          commit(AUTH_ERROR, err);
+          commit("snackbar/setErr", err, { root: true });
+          reject(err);
+        })
         .finally(() => {
           router.push({ path: `/user/info` });
-        })
-        .catch(err => {
-          reject(err);
         });
     });
   },

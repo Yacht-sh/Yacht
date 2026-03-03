@@ -39,22 +39,26 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def update_user(db: Session, user: schemas.UserCreate, current_user):
-    _hashed_password = get_password_hash(user.password)
     _user = get_user_by_name(db=db, username=current_user)
-    if _user and _user.is_active:
-        if _user.username.casefold() != user.username.casefold():
-            print("Old Username: {name}".format(name=_user.username))
-            print("New Username: {name}".format(name=user.username))
-        _user.username = user.username.casefold()
-        if user.password != "":
-            _user.hashed_password = _hashed_password
-        try:
-            db.add(_user)
-            db.commit()
-            db.refresh(_user)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=exc)
-        return _user
+    if not _user or not _user.is_active:
+        raise HTTPException(status_code=401, detail="Not logged in.")
+
+    if _user.username.casefold() != user.username.casefold():
+        print("Old Username: {name}".format(name=_user.username))
+        print("New Username: {name}".format(name=user.username))
+
+    _user.username = user.username.casefold()
+    if user.password:
+        _user.hashed_password = get_password_hash(user.password)
+
+    try:
+        db.add(_user)
+        db.commit()
+        db.refresh(_user)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc))
+    return _user
 
 
 def verify_password(plain_password, hashed_password):

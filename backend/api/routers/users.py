@@ -131,7 +131,19 @@ def update_user(
 ):
     auth_check(Authorize)
     current_user = Authorize.get_jwt_subject()
-    return crud.update_user(db=db, user=user, current_user=current_user)
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Not logged in.")
+
+    updated_user = crud.update_user(db=db, user=user, current_user=current_user)
+
+    # If username/email changes, rotate tokens so the current session remains valid.
+    if updated_user.username != current_user:
+        access_token = Authorize.create_access_token(subject=updated_user.username)
+        refresh_token = Authorize.create_refresh_token(subject=updated_user.username)
+        Authorize.set_access_cookies(access_token)
+        Authorize.set_refresh_cookies(refresh_token)
+
+    return updated_user
 
 
 @router.get("/logout")

@@ -1,4 +1,6 @@
 .github
+!.github/
+!.github/dependabot.yml
 .vscode
 versions
 sql_app.db
