@@ -47,5 +47,5 @@ uvloop==0.21.0
 # websocket-client==1.7.2 (wrong version cant deploy)
 websocket-client==1.6.4
 websockets==11.0.2
-wheel==0.41.0
+wheel==0.46.2
 setuptools==78.1.1
