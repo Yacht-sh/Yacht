@@ -25,11 +25,11 @@
 
           <ValidationProvider
             name="password"
-            rules="required"
+            rules="min:8"
             v-slot="{ errors, valid }"
           >
             <v-text-field
-              label="Password"
+              label="Password (optional)"
               v-model="password"
               :error-messages="errors"
               :success="valid"
