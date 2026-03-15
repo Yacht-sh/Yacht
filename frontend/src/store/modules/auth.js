@@ -13,6 +13,22 @@ import {
 import axios from "axios";
 import router from "@/router/index";
 
+function configureAccessCsrf() {
+  axios.defaults.withCredentials = true;
+  axios.defaults.xsrfCookieName = "csrf_access_token";
+  axios.defaults.xsrfHeaderName = "X-CSRF-TOKEN";
+}
+
+function configureRefreshCsrf() {
+  return {
+    xsrfCookieName: "csrf_refresh_token",
+    xsrfHeaderName: "X-CSRF-TOKEN",
+    withCredentials: true
+  };
+}
+
+configureAccessCsrf();
+
 const storedUsername = localStorage.getItem("username");
 const normalizedStoredUsername =
   storedUsername && storedUsername !== "undefined" && storedUsername !== "null"
@@ -59,9 +75,7 @@ const actions = {
             };
           }
           localStorage.setItem("username", username);
-          axios.defaults.withCredentials = true;
-          axios.defaults.xsrfCookieName = "csrf_access_token";
-          axios.defaults.xsrfHeaderName = "X-CSRF-TOKEN";
+          configureAccessCsrf();
           commit(AUTH_SUCCESS, resp);
           resolve(resp);
         })
@@ -83,15 +97,7 @@ const actions = {
         .then(resp => {
           let rurl = "/api/auth/logout/refresh";
           axios
-            .get(
-              rurl,
-              {},
-              {
-                xsrfCookieName: "csrf_refresh_token",
-                xsrfHeaderName: "X-CSRF-TOKEN",
-                withCredentials: true
-              }
-            )
+            .get(rurl, configureRefreshCsrf())
             .then(resp => {
               commit(AUTH_CLEAR, resp);
               localStorage.removeItem("username");
@@ -115,13 +121,10 @@ const actions = {
         .post(
           url,
           {},
-          {
-            xsrfCookieName: "csrf_refresh_token",
-            xsrfHeaderName: "X-CSRF-TOKEN",
-            withCredentials: true
-          }
+          configureRefreshCsrf()
         )
         .then(resp => {
+          configureAccessCsrf();
           resolve(resp);
         })
         .catch(error => {
@@ -135,19 +138,22 @@ const actions = {
       commit(AUTH_REQUEST);
       const url = "/api/auth/me";
       axios
-        .post(url, credentials, { withCredentials: true })
+        .post(url, credentials, {
+          withCredentials: true,
+          xsrfCookieName: "csrf_access_token",
+          xsrfHeaderName: "X-CSRF-TOKEN"
+        })
         .then(resp => {
           localStorage.setItem("username", resp.data.username);
+          configureAccessCsrf();
           commit(AUTH_SUCCESS, resp);
+          router.push({ path: `/user/info` });
           resolve(resp);
         })
         .catch(err => {
           commit(AUTH_ERROR, err);
           commit("snackbar/setErr", err, { root: true });
           reject(err);
-        })
-        .finally(() => {
-          router.push({ path: `/user/info` });
         });
     });
   },
@@ -159,9 +165,11 @@ const actions = {
       .then(resp => {
         if (resp.data.authDisabled == true) {
           localStorage.setItem("username", resp.data.username);
+          configureAccessCsrf();
           commit(AUTH_DISABLED);
           commit(AUTH_SUCCESS, resp);
         } else {
+          configureAccessCsrf();
           commit(AUTH_ENABLED);
         }
       })
