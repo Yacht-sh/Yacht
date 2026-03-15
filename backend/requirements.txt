@@ -20,7 +20,7 @@ gunicorn==23.0.0
 h11==0.16.0
 httptools==0.6.4
 idna==3.7
-python-jose==3.4.0
+python-jose==3.5.0
 makefun==1.15.0
 mysqlclient==2.2.0
 passlib==1.7.4
