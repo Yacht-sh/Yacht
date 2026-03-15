@@ -56,4 +56,9 @@ jobs:
             ghcr.io/${{ env.OWNER_LC }}/yacht:latest-${{ steps.current-time.outputs.formattedTime }}
             ghcr.io/${{ env.OWNER_LC }}/yacht:v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+      -
+        name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

@@ -2,6 +2,7 @@
   <v-card color="foreground">
     <v-card-title class="primary font-weight-bold">
       Dashboard <v-icon v-on:click="refresh()">mdi-refresh</v-icon>
+      <v-chip small class="ml-3" color="secondary">{{ activeHostLabel }}</v-chip>
     </v-card-title>
     <v-card-text class="secondary text-center px-5 py-5">
       <v-row dense class="mt-3">
@@ -69,13 +70,21 @@ export default {
   data() {
     return {
       stats: {},
-      statConnection: {}
+      statConnection: {},
     };
   },
   methods: {
     ...mapActions({
-      readApps: "apps/readApps"
+      readApps: "apps/readApps",
     }),
+    statsUrl() {
+      const query = new URLSearchParams();
+      if (this.selectedHostId != null) {
+        query.set("host_id", this.selectedHostId);
+      }
+      const suffix = query.toString();
+      return `/api/apps/stats${suffix ? `?${suffix}` : ""}`;
+    },
     formatBytes(bytes, decimals = 2) {
       if (bytes === 0) return "0 Bytes";
 
@@ -88,38 +97,34 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
     },
     readAppStats() {
-        this.statConnection = new EventSource(
-          `/api/apps/stats`
+      this.statConnection = new EventSource(this.statsUrl());
+      this.statConnection.addEventListener("update", event => {
+        let statsGroup = JSON.parse(event.data);
+        if (!(statsGroup.name in this.stats)) {
+          this.stats[statsGroup.name] = {};
+          this.stats[statsGroup.name].name = statsGroup.name;
+        }
+        this.stats[statsGroup.name].cpu_percent = Math.round(
+          statsGroup.cpu_percent
         );
-        this.statConnection.addEventListener("update", event => {
-          let statsGroup = JSON.parse(event.data);
-          if (!(statsGroup.name in this.stats)) {
-            this.stats[statsGroup.name] = {};
-            this.stats[statsGroup.name].name = statsGroup.name;
-          }
-          this.stats[statsGroup.name].cpu_percent = Math.round(
-            statsGroup.cpu_percent
-          );
-          this.stats[statsGroup.name].mem_percent = Math.round(
-            statsGroup.mem_percent
-          );
-          this.stats[statsGroup.name].mem_current = this.formatBytes(
-            statsGroup.mem_current,
-            2
-          );
-          this.stats[statsGroup.name].mem_total = this.formatBytes(
-            statsGroup.mem_total,
-            2
-          );
-          this.$forceUpdate();
-        });
+        this.stats[statsGroup.name].mem_percent = Math.round(
+          statsGroup.mem_percent
+        );
+        this.stats[statsGroup.name].mem_current = this.formatBytes(
+          statsGroup.mem_current,
+          2
+        );
+        this.stats[statsGroup.name].mem_total = this.formatBytes(
+          statsGroup.mem_total,
+          2
+        );
+        this.$forceUpdate();
+      });
     },
     refresh() {
       this.closeStats();
       this.readApps();
-      for (var app in this.apps) {
-        this.readAppStats(this.apps[app].name);
-      }
+      this.readAppStats();
     },
     sortByTitle(arr) {
       let sorted = Object.keys(arr)
@@ -127,7 +132,7 @@ export default {
         .reduce(
           (acc, key) => ({
             ...acc,
-            [key]: arr[key]
+            [key]: arr[key],
           }),
           {}
         );
@@ -137,7 +142,9 @@ export default {
       this.$router.push({ path: `/apps/${appName}/info` });
     },
     closeStats() {
-      this.statConnection.close();
+      if (this.statConnection && this.statConnection.close) {
+        this.statConnection.close();
+      }
       this.stats = {};
     },
     fillStats(app) {
@@ -147,30 +154,41 @@ export default {
           {
             label: "CPU Usage",
             backgroundColor: "#41b883",
-            data: app.cpu_percent
+            data: app.cpu_percent,
           },
           {
             label: "Mem Usage",
             backgroundColor: "#008bcf",
-            data: app.mem_percent
-          }
-        ]
+            data: app.mem_percent,
+          },
+        ],
       };
       return datacollection;
-    }
+    },
   },
   computed: {
-    ...mapState("apps", ["apps"])
+    ...mapState("apps", ["apps"]),
+    ...mapState("hosts", ["selectedHostId"]),
+    ...mapState({
+      activeHostLabel: state => state.hosts.hosts.find(
+        host => host.id === state.hosts.selectedHostId
+      )?.name || "Local"
+    })
   },
   async created() {
     await this.readApps();
-    for (var app in this.apps) {
-      this.readAppStats(this.apps[app].name);
+    this.readAppStats();
+  },
+  watch: {
+    async selectedHostId() {
+      this.closeStats();
+      await this.readApps();
+      this.readAppStats();
     }
   },
   beforeDestroy() {
     this.closeStats();
-  }
+  },
 };
 </script>
 

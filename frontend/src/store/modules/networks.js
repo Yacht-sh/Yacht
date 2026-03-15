@@ -1,6 +1,15 @@
 import axios from "axios";
 import router from "@/router/index";
 
+const resourceUrl = (path = "", hostId = null) => {
+  const search = new URLSearchParams();
+  if (hostId != null) {
+    search.set("host_id", hostId);
+  }
+  const query = search.toString();
+  return `/api/resources/networks/${path}${query ? `?${query}` : ""}`;
+};
+
 const state = {
   networks: [],
   isLoading: false
@@ -34,8 +43,8 @@ const mutations = {
 };
 
 const actions = {
-  _readNetworks({ commit }) {
-    const url = "/api/resources/networks/";
+  _readNetworks({ commit, rootState }) {
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     commit("setLoading", true);
     return new Promise((resolve, reject) => {
       axios
@@ -55,9 +64,9 @@ const actions = {
         });
     });
   },
-  readNetworks({ commit }) {
+  readNetworks({ commit, rootState }) {
     commit("setLoading", true);
-    const url = "/api/resources/networks/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -72,9 +81,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  readNetwork({ commit }, id) {
+  readNetwork({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/networks/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -88,9 +97,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  writeNetwork({ commit }, payload) {
+  writeNetwork({ commit, rootState }, payload) {
     commit("setLoading", true);
-    const url = "/api/resources/networks/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .post(url, payload)
       .then(response => {
@@ -121,9 +130,9 @@ const actions = {
   //         commit("setLoading", false);
   //       });
   //   },
-  deleteNetwork({ commit }, id) {
+  deleteNetwork({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/networks/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .delete(url)
       .then(response => {

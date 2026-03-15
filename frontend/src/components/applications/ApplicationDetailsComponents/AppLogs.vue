@@ -36,10 +36,10 @@ export default {
         enable: true,
         always: false,
         smooth: false,
-        notSmoothOnInit: true
-      }
+        notSmoothOnInit: true,
+      },
     };
-  }
+  },
 };
 </script>
 
