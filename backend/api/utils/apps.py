@@ -327,9 +327,10 @@ def get_update_ports(ports):
         return None
 
 
-def _check_updates(tag):
+def _check_updates(tag, dclient=None):
     if tag:
-        dclient = docker.from_env()
+        if dclient is None:
+            dclient = docker.from_env()
         try:
             current = dclient.images.get(tag)
         except APIError as err:

@@ -1,5 +1,14 @@
 import axios from "axios";
 
+const appUrl = (path = "", hostId = null) => {
+  const search = new URLSearchParams();
+  if (hostId != null) {
+    search.set("host_id", hostId);
+  }
+  const query = search.toString();
+  return `/api/apps/${path}${query ? `?${query}` : ""}`;
+};
+
 const state = {
   apps: [],
   updatable: [],
@@ -55,10 +64,10 @@ const mutations = {
 };
 
 const actions = {
-  async readApps({ commit }) {
+  async readApps({ commit, rootState }) {
     await commit("setLoading", true);
     await commit("setAction", "Getting Apps ...");
-    const url = "/api/apps/";
+    const url = appUrl("", rootState.hosts.selectedHostId);
     await axios
       .get(url)
       .then(response => {
@@ -99,13 +108,13 @@ const actions = {
   //     })
   //   );
   // },
-  async checkAppUpdate({ commit }, apps) {
+  async checkAppUpdate({ commit, rootState }, apps) {
     await commit("setLoading", true);
     await commit("setLoadingItems");
     await commit("setAction", "Checking for updates...");
     await Promise.all(
       apps.map(async _app => {
-        let url = `/api/apps/${_app.name}/updates`;
+        let url = appUrl(`${_app.name}/updates`, rootState.hosts.selectedHostId);
         await axios
           .get(url)
           .then(response => {
@@ -124,8 +133,8 @@ const actions = {
       commit("setAction", "");
     });
   },
-  readApp({ commit }, Name) {
-    const url = `/api/apps/${Name}`;
+  readApp({ commit, rootState }, Name) {
+    const url = appUrl(Name, rootState.hosts.selectedHostId);
     commit("setLoading", true);
     return new Promise((resolve, reject) => {
       axios
@@ -142,16 +151,16 @@ const actions = {
         });
     });
   },
-  async readAppProcesses({ commit }, Name) {
-    const url = `/api/apps/${Name}/processes`;
+  async readAppProcesses({ commit, rootState }, Name) {
+    const url = appUrl(`${Name}/processes`, rootState.hosts.selectedHostId);
     let response = await axios.get(url);
     if (response) {
       const processes = response.data;
       commit("setAppProcesses", processes);
     }
   },
-  async readAppLogs({ commit }, Name) {
-    let url = `/api/apps/${Name}/logs`;
+  async readAppLogs({ commit, rootState }, Name) {
+    let url = appUrl(`${Name}/logs`, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -167,10 +176,10 @@ const actions = {
         commit("snackbar/setErr", err, { root: true });
       });
   },
-  AppUpdate({ commit }, Name) {
+  AppUpdate({ commit, rootState }, Name) {
     commit("setLoading", true);
     commit("setAction", "Updating " + Name + " ...");
-    const url = `/api/apps/${Name}/update`;
+    const url = appUrl(`${Name}/update`, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -186,10 +195,10 @@ const actions = {
         commit("setAction", "");
       });
   },
-  AppAction({ commit }, { Name, Action }) {
+  AppAction({ commit, rootState }, { Name, Action }) {
     commit("setLoading", true);
     commit("setAction", Action + " " + Name + " ...");
-    const url = `/api/apps/actions/${Name}/${Action}`;
+    const url = appUrl(`actions/${Name}/${Action}`, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {

@@ -8,6 +8,7 @@ import images from "./modules/images.js";
 import volumes from "./modules/volumes.js";
 import networks from "./modules/networks.js";
 import projects from "./modules/projects.js";
+import hosts from "./modules/hosts.js";
 
 Vue.use(Vuex);
 
@@ -47,6 +48,7 @@ export default new Vuex.Store({
     volumes,
     networks,
     projects,
+    hosts,
     auth,
     snackbar
   }

@@ -11,6 +11,7 @@
       </v-fade-transition>
       <v-card-title class="primary font-weight-bold">
         Projects
+        <v-chip small class="ml-3" color="secondary">{{ activeHostLabel }}</v-chip>
         <v-btn class="ml-2" color="secondary" to="/projects/_/edit">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
@@ -203,6 +204,11 @@
             </span>
           </div>
         </template>
+        <template v-slot:item.host="{ item }">
+          <v-chip small color="secondary">
+            {{ item.YachtHost ? item.YachtHost.name : "local" }}
+          </v-chip>
+        </template>
         <template v-slot:item.path="{ item }" class="idcell">
           <div class="idcell">
             <span class="d-inline-block text-truncate idtext">
@@ -268,6 +274,11 @@ export default {
           sortable: true
         },
         {
+          text: "Host",
+          value: "host",
+          sortable: true
+        },
+        {
           text: "Version",
           value: "version",
           sortable: true
@@ -301,7 +312,17 @@ export default {
     }
   },
   computed: {
-    ...mapState("projects", ["projects", "isLoading", "action"])
+    ...mapState("projects", ["projects", "isLoading", "action"]),
+    ...mapState("hosts", ["selectedHostId", "hosts"]),
+    activeHostLabel() {
+      const selectedHost = this.hosts.find(host => host.id === this.selectedHostId);
+      return selectedHost ? selectedHost.name : "Local";
+    }
+  },
+  watch: {
+    selectedHostId() {
+      this.readProjects();
+    }
   },
   mounted() {
     this.readProjects();

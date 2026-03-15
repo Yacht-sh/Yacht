@@ -1,11 +1,19 @@
 import docker
 from fastapi import HTTPException
 
+from api.utils.docker_hosts import get_docker_client, host_metadata
+
+
+def _annotate_with_host(attrs, host):
+    attrs.update({"YachtHost": host_metadata(host)})
+    return attrs
+
+
 ### IMAGES ###
 
 
-def get_images():
-    dclient = docker.from_env()
+def get_images(db, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     images = dclient.images.list()
     image_list = []
@@ -18,28 +26,28 @@ def get_images():
             except Exception as exc:
                 if exc.status_code == 404:
                     pass
-        if attrs.get("inUse") == None:
+        if attrs.get("inUse") is None:
             attrs.update({"inUse": False})
 
-        image_list.append(attrs)
+        image_list.append(_annotate_with_host(attrs, host))
     return image_list
 
 
-def write_image(image_tag):
+def write_image(db, image_tag, host_id=None):
     delim = ":"
-    dclient = docker.from_env()
+    _, dclient = get_docker_client(db, host_id)
     repo, tag = None, image_tag
     if delim in image_tag:
         repo, tag = tag.split(delim, 1)
     else:
         repo = image_tag
         tag = "latest"
-    image = dclient.images.pull(repo, tag)
-    return get_images()
+    dclient.images.pull(repo, tag)
+    return get_images(db, host_id)
 
 
-def get_image(image_id):
-    dclient = docker.from_env()
+def get_image(db, image_id, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     image = dclient.images.get(image_id)
     attrs = image.attrs
@@ -50,13 +58,13 @@ def get_image(image_id):
         except Exception as exc:
             if exc.status_code == 404:
                 pass
-    if attrs.get("inUse") == None:
+    if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
-    return attrs
+    return _annotate_with_host(attrs, host)
 
 
-def update_image(image_id):
-    dclient = docker.from_env()
+def update_image(db, image_id, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     if type(image_id) == str:
         image = dclient.images.get(image_id)
         new_image = dclient.images.get_registry_data(image.tags[0])
@@ -66,11 +74,11 @@ def update_image(image_id):
             raise HTTPException(
                 status_code=exc.response.status_code, detail=exc.explanation
             )
-        return get_image(image_id)
+        return get_image(db, image_id, host_id)
 
 
-def delete_image(image_id):
-    dclient = docker.from_env()
+def delete_image(db, image_id, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     image = dclient.images.get(image_id)
     try:
         dclient.images.remove(image_id, force=True)
@@ -82,8 +90,8 @@ def delete_image(image_id):
 
 
 ### Volumes ###
-def get_volumes():
-    dclient = docker.from_env()
+def get_volumes(db, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     volumes = dclient.volumes.list()
     volume_list = []
@@ -99,25 +107,25 @@ def get_volumes():
             except Exception as exc:
                 if exc.status_code == 404:
                     pass
-        if attrs.get("inUse") == None:
+        if attrs.get("inUse") is None:
             attrs.update({"inUse": False})
-        volume_list.append(attrs)
+        volume_list.append(_annotate_with_host(attrs, host))
     return volume_list
 
 
-def write_volume(volume_name):
-    dclient = docker.from_env()
+def write_volume(db, volume_name, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     try:
-        volume = dclient.volumes.create(name=volume_name)
+        dclient.volumes.create(name=volume_name)
     except Exception as exc:
         raise HTTPException(
             status_code=exc.response.status_code, detail=exc.explanation
         )
-    return get_volumes()
+    return get_volumes(db, host_id)
 
 
-def get_volume(volume_id):
-    dclient = docker.from_env()
+def get_volume(db, volume_id, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     volume = dclient.volumes.get(volume_id)
     attrs = volume.attrs
@@ -135,13 +143,13 @@ def get_volume(volume_id):
                 raise HTTPException(
                     status_code=exc.response.status_code, detail=exc.explanation
                 )
-    if attrs.get("inUse") == None:
+    if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
-    return attrs
+    return _annotate_with_host(attrs, host)
 
 
-def delete_volume(volume_id):
-    dclient = docker.from_env()
+def delete_volume(db, volume_id, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     volume = dclient.volumes.get(volume_id)
     try:
         volume.remove(force=True)
@@ -153,8 +161,8 @@ def delete_volume(volume_id):
 
 
 ### Networks ###
-def get_networks():
-    dclient = docker.from_env()
+def get_networks(db, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     networks = dclient.networks.list()
     network_list = []
@@ -169,7 +177,6 @@ def get_networks():
                     attrs.update({"inUse": True})
                     break
             except Exception as exc:
-                print(exc)
                 if exc.status_code == 404:
                     pass
                 else:
@@ -179,19 +186,17 @@ def get_networks():
         if attrs:
             if attrs.get("inUse") is None:
                 attrs.update({"inUse": False})
-            if attrs.get("Labels", {}):
-                if attrs.get("Labels", {}).get("com.docker.compose.project"):
-                    attrs.update(
-                        {"Project": attrs["Labels"]["com.docker.compose.project"]}
-                    )
-            network_list.append(attrs)
+            if attrs.get("Labels", {}) and attrs.get("Labels", {}).get(
+                "com.docker.compose.project"
+            ):
+                attrs.update({"Project": attrs["Labels"]["com.docker.compose.project"]})
+            network_list.append(_annotate_with_host(attrs, host))
     return network_list
 
 
-def write_network(network_form):
-    dclient = docker.from_env()
+def write_network(db, network_form, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
 
-    ### Check for IP addresses ###
     if network_form.ipv4subnet:
         ipv4_pool = docker.types.IPAMPool(
             subnet=network_form.ipv4subnet,
@@ -211,7 +216,6 @@ def write_network(network_form):
     else:
         ipam_config = None
 
-    ### Check for parent device (macvlan only) ###
     if network_form.network_devices:
         network_options = {"parent": network_form.network_devices}
     else:
@@ -231,16 +235,15 @@ def write_network(network_form):
             status_code=exc.response.status_code, detail=exc.explanation
         )
 
-    return get_networks()
+    return get_networks(db, host_id)
 
 
-def get_network(network_id):
-    dclient = docker.from_env()
+def get_network(db, network_id, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
 
     try:
         network = dclient.networks.get(network_id)
-
     except Exception as exc:
         raise HTTPException(
             status_code=exc.response.status_code, detail=exc.explanation
@@ -262,17 +265,16 @@ def get_network(network_id):
                 raise HTTPException(
                     status_code=exc.response.status_code, detail=exc.explanation
                 )
-    if attrs.get("inUse") == None:
+    if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
-    return attrs
+    return _annotate_with_host(attrs, host)
 
 
-def delete_network(network_id):
-    dclient = docker.from_env()
+def delete_network(db, network_id, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     network = dclient.networks.get(network_id)
     try:
         network.remove()
-
     except Exception as exc:
         raise HTTPException(
             status_code=exc.response.status_code, detail=exc.explanation
@@ -281,8 +283,8 @@ def delete_network(network_id):
     return network.attrs
 
 
-def prune_resources(resource):
-    dclient = docker.from_env()
+def prune_resources(db, resource, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     action = getattr(dclient, resource)
     if resource == "images":
         deleted_resource = action.prune(filters={"dangling": False})

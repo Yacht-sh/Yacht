@@ -13,6 +13,9 @@
         <v-row>
           <v-col>
             {{ project.name }}
+            <v-chip small class="ml-3" color="secondary">
+              {{ projectHostName }}
+            </v-chip>
             <v-menu
               :close-on-click="true"
               :close-on-content-click="true"
@@ -496,7 +499,7 @@
         project</v-card-text
       >
       <v-btn
-        :href="`/api/compose/${project.name}/support`"
+        :href="supportBundleUrl(project.name)"
         target="_blank"
         class="mb-2 ml-2"
         color="primary"
@@ -545,12 +548,20 @@ export default {
   computed: {
     ...mapState("projects", ["project", "projects", "isLoading", "action"]),
     ...mapState("apps", ["apps"]),
+    ...mapState("hosts", ["selectedHostId", "hosts"]),
     ...mapGetters({
       getProjectByName: "projects/getProjectByName"
     }),
     project() {
       const projectName = this.$route.params.projectName;
       return this.getProjectByName(projectName);
+    },
+    projectHostName() {
+      if (this.project && this.project.YachtHost) {
+        return this.project.YachtHost.name;
+      }
+      const selectedHost = this.hosts.find(host => host.id === this.selectedHostId);
+      return selectedHost ? selectedHost.name : "Local";
     }
   },
   methods: {
@@ -588,6 +599,14 @@ export default {
       const projectName = this.$route.params.projectName;
       this.readProject(projectName);
       this.readApps();
+    },
+    supportBundleUrl(projectName) {
+      const query = new URLSearchParams();
+      if (this.selectedHostId != null) {
+        query.set("host_id", this.selectedHostId);
+      }
+      const suffix = query.toString();
+      return `/api/compose/${projectName}/support${suffix ? `?${suffix}` : ""}`;
     }
   },
   mounted() {
@@ -595,6 +614,11 @@ export default {
     this.readProject(projectName);
 
     this.readApps();
+  },
+  watch: {
+    selectedHostId() {
+      this.reload();
+    }
   }
 };
 </script>
