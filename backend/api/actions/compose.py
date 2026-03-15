@@ -35,18 +35,18 @@ def _validated_project_name(project_name):
     return normalized
 
 
-def _validated_project_dir(project_dir):
-    resolved_dir = pathlib.Path(project_dir).resolve()
-    project_name = _validated_project_name(resolved_dir.name)
-    return pathlib.Path(resolve_compose_project_path(project_name))
+def _validated_project_dir(project_name):
+    return pathlib.Path(
+        resolve_compose_project_path(_validated_project_name(project_name))
+    )
 
 
-def _project_metadata_path(project_dir):
-    return _validated_project_dir(project_dir) / ".yacht.json"
+def _project_metadata_path(project_name):
+    return _validated_project_dir(project_name) / ".yacht.json"
 
 
-def _read_project_metadata(project_dir):
-    metadata_path = _project_metadata_path(project_dir)
+def _read_project_metadata(project_name):
+    metadata_path = _project_metadata_path(project_name)
     if not metadata_path.exists():
         return {}
     with metadata_path.open("r", encoding="utf-8") as metadata_file:
@@ -56,14 +56,14 @@ def _read_project_metadata(project_dir):
             return {}
 
 
-def _write_project_metadata(project_dir, metadata):
-    metadata_path = _project_metadata_path(project_dir)
+def _write_project_metadata(project_name, metadata):
+    metadata_path = _project_metadata_path(project_name)
     with metadata_path.open("w", encoding="utf-8") as metadata_file:
         json.dump(metadata, metadata_file)
 
 
-def _project_host_id(project_dir, db):
-    metadata = _read_project_metadata(project_dir)
+def _project_host_id(project_name, db):
+    metadata = _read_project_metadata(project_name)
     if metadata.get("host_id") is not None:
         return metadata["host_id"]
     local_host = db.query(Host).filter(Host.connection_type == "local").first()
@@ -72,12 +72,12 @@ def _project_host_id(project_dir, db):
     return local_host.id
 
 
-def _project_host(project_dir, db):
-    return resolve_host(db, _project_host_id(project_dir, db))
+def _project_host(project_name, db):
+    return resolve_host(db, _project_host_id(project_name, db))
 
 
-def _project_matches_host(project_dir, host):
-    metadata = _read_project_metadata(project_dir)
+def _project_matches_host(project_name, host):
+    metadata = _read_project_metadata(project_name)
     if metadata.get("host_id") is None:
         return host.connection_type == "local"
     return metadata["host_id"] == host.id
@@ -90,7 +90,7 @@ Runs an action on the specified compose project.
 def compose_action(name, action, db, host_id=None):
     files = find_yml_files(settings.COMPOSE_DIR)
     compose = get_compose(name, db, host_id)
-    host = _project_host(os.path.dirname(compose["path"]), db)
+    host = _project_host(compose["name"], db)
     if action == "up":
         try:
             _action = docker_compose(
@@ -170,7 +170,7 @@ def compose_app_action(
 
     files = find_yml_files(settings.COMPOSE_DIR)
     compose = get_compose(name, db, host_id)
-    host = _project_host(os.path.dirname(compose["path"]), db)
+    host = _project_host(compose["name"], db)
     print("RUNNING: " + compose["path"] + " docker-compose " + " " + action + " " + app)
     if action == "up":
         try:
@@ -252,8 +252,7 @@ def get_compose_projects(db, host_id=None):
 
     projects = []
     for project, file in files.items():
-        project_dir = os.path.dirname(file)
-        if not _project_matches_host(project_dir, host):
+        if not _project_matches_host(project, host):
             continue
         volumes = []
         networks = []
@@ -295,7 +294,7 @@ project.
 def get_compose(name, db, host_id=None):
     try:
         project_dir = resolve_compose_project_path(name)
-        project_host = _project_host(project_dir, db)
+        project_host = _project_host(name, db)
         if host_id is not None and project_host.id != host_id:
             raise HTTPException(404, "Project not found on selected host.")
         files = find_yml_files(project_dir)
@@ -346,7 +345,8 @@ the content of compose.content to it.
 
 
 def write_compose(compose, db):
-    project_dir = _validated_project_dir(resolve_compose_project_path(compose.name))
+    project_name = _validated_project_name(compose.name)
+    project_dir = _validated_project_dir(project_name)
     host = resolve_host(db, compose.host_id)
     if not project_dir.exists():
         try:
@@ -365,7 +365,7 @@ def write_compose(compose, db):
                 )
         except Exception as exc:
             raise HTTPException(exc.status_code, exc.detail)
-    _write_project_metadata(project_dir, {"host_id": host.id})
+    _write_project_metadata(project_name, {"host_id": host.id})
 
     return get_compose(name=compose.name, db=db, host_id=host.id)
 
@@ -377,9 +377,10 @@ it exists. This also deletes all files in the folder.
 
 
 def delete_compose(project_name, db, host_id=None):
-    project_dir = _validated_project_dir(resolve_compose_project_path(project_name))
+    project_name = _validated_project_name(project_name)
+    project_dir = _validated_project_dir(project_name)
     compose_file = project_dir / "docker-compose.yml"
-    project_host = _project_host(project_dir, db)
+    project_host = _project_host(project_name, db)
     if host_id is not None and project_host.id != host_id:
         raise HTTPException(404, "Project not found on selected host.")
 
@@ -401,10 +402,11 @@ def delete_compose(project_name, db, host_id=None):
 
 
 def generate_support_bundle(project_name, db, host_id=None):
-    project_dir = _validated_project_dir(resolve_compose_project_path(project_name))
+    project_name = _validated_project_name(project_name)
+    project_dir = _validated_project_dir(project_name)
     files = find_yml_files(project_dir)
     if project_name in files:
-        project_host = _project_host(project_dir, db)
+        project_host = _project_host(project_name, db)
         if host_id is not None and project_host.id != host_id:
             raise HTTPException(404, "Project not found on selected host.")
         _, dclient = get_docker_client(db, project_host.id)

@@ -15,7 +15,11 @@ def resolve_compose_path(path):
     Resolve a path and ensure it stays inside COMPOSE_DIR.
     """
     base_dir = get_compose_base_dir()
-    resolved = os.path.realpath(os.path.abspath(path))
+    if not os.path.isabs(path):
+        candidate = os.path.join(base_dir, path)
+    else:
+        candidate = path
+    resolved = os.path.realpath(os.path.abspath(candidate))
     try:
         common = os.path.commonpath([base_dir, resolved])
     except ValueError:
