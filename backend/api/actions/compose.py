@@ -18,11 +18,9 @@ import re
 from api.db.models.hosts import Host
 from api.settings import Settings
 from api.utils.compose import (
-    ensure_compose_path,
     find_project_yml_files,
     find_yml_files,
     get_compose_base_dir,
-    resolve_compose_project_path,
 )
 from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
 
@@ -42,25 +40,12 @@ def _validated_project_name(project_name):
 
 
 def _validated_project_dir(project_name):
-    base_dir = pathlib.Path(get_compose_base_dir()).resolve()
-    project_dir = pathlib.Path(
-        resolve_compose_project_path(_validated_project_name(project_name))
-    ).resolve()
-    try:
-        project_dir.relative_to(base_dir)
-    except ValueError as exc:
-        raise HTTPException(400, "Path escapes compose directory.") from exc
-    return project_dir
+    base_dir = pathlib.Path(get_compose_base_dir())
+    return base_dir / _validated_project_name(project_name)
 
 
 def _project_metadata_path(project_name):
-    metadata_path = (_validated_project_dir(project_name) / ".yacht.json").resolve()
-    base_dir = pathlib.Path(get_compose_base_dir()).resolve()
-    try:
-        metadata_path.relative_to(base_dir)
-    except ValueError as exc:
-        raise HTTPException(400, "Path escapes compose directory.") from exc
-    return metadata_path
+    return _validated_project_dir(project_name) / ".yacht.json"
 
 
 def _read_project_metadata(project_name):
@@ -412,7 +397,7 @@ def delete_compose(project_name, db, host_id=None):
         except OSError as exc:
             raise HTTPException(400, exc.strerror) from exc
     try:
-        shutil.rmtree(ensure_compose_path(project_dir))
+        shutil.rmtree(project_dir)
     except OSError as exc:
         raise HTTPException(400, exc.strerror) from exc
     return get_compose_projects(db, host_id)
@@ -428,7 +413,7 @@ def generate_support_bundle(project_name, db, host_id=None):
             raise HTTPException(404, "Project not found on selected host.")
         _, dclient = get_docker_client(db, project_host.id)
         stream = io.BytesIO()
-        compose_path = ensure_compose_path(files[project_name])
+        compose_path = pathlib.Path(files[project_name])
         with zipfile.ZipFile(stream, "w") as zf, compose_path.open(
             "r", encoding="utf-8"
         ) as fp:

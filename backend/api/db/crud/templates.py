@@ -7,11 +7,13 @@ from api.db.models import containers as models
 from api.utils.templates import conv_sysctls2dict, conv_ports2dict
 
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
+import ipaddress
 import json
 import yaml
 import os
 import requests
+import socket
 
 # Templates
 
@@ -22,7 +24,46 @@ def _validated_template_url(url: str) -> str:
         raise HTTPException(
             status_code=422, detail="Template URL must use http or https."
         )
-    return url
+    if parsed_url.username or parsed_url.password:
+        raise HTTPException(status_code=422, detail="Template URL cannot include credentials.")
+    if not parsed_url.hostname:
+        raise HTTPException(status_code=422, detail="Template URL must include a hostname.")
+
+    try:
+        addresses = socket.getaddrinfo(parsed_url.hostname, parsed_url.port or None)
+    except socket.gaierror as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    for _, _, _, _, sockaddr in addresses:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Template URL must resolve to a public IP address.",
+            )
+
+    safe_netloc = parsed_url.hostname
+    if parsed_url.port is not None:
+        safe_netloc = f"{safe_netloc}:{parsed_url.port}"
+
+    safe_path = parsed_url.path or "/"
+    return urlunparse(
+        (
+            parsed_url.scheme,
+            safe_netloc,
+            safe_path,
+            "",
+            parsed_url.query,
+            "",
+        )
+    )
 
 
 def _template_extension(url: str) -> str:
@@ -33,7 +74,9 @@ def _load_template_data(url: str):
     safe_url = _validated_template_url(url)
     ext = _template_extension(safe_url)
     try:
-        response = requests.get(safe_url, timeout=10)
+        with requests.Session() as session:
+            session.trust_env = False
+            response = session.get(safe_url, timeout=10, allow_redirects=False)
         response.raise_for_status()
         if ext in {".yml", ".yaml"}:
             return yaml.load(response.text, Loader=yaml.SafeLoader)
