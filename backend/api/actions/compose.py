@@ -13,6 +13,7 @@ import shutil
 import docker
 import io
 import zipfile
+import re
 
 from api.db.models.hosts import Host
 from api.settings import Settings
@@ -20,17 +21,35 @@ from api.utils.compose import find_yml_files, resolve_compose_project_path
 from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
 
 settings = Settings()
+PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def _validated_project_name(project_name):
+    if not isinstance(project_name, str):
+        raise HTTPException(400, "Invalid project name.")
+
+    normalized = project_name.strip()
+    if not normalized or not PROJECT_NAME_PATTERN.fullmatch(normalized):
+        raise HTTPException(400, "Invalid project name.")
+
+    return normalized
+
+
+def _validated_project_dir(project_dir):
+    resolved_dir = pathlib.Path(project_dir).resolve()
+    project_name = _validated_project_name(resolved_dir.name)
+    return pathlib.Path(resolve_compose_project_path(project_name))
 
 
 def _project_metadata_path(project_dir):
-    return os.path.join(project_dir, ".yacht.json")
+    return _validated_project_dir(project_dir) / ".yacht.json"
 
 
 def _read_project_metadata(project_dir):
     metadata_path = _project_metadata_path(project_dir)
-    if not os.path.exists(metadata_path):
+    if not metadata_path.exists():
         return {}
-    with open(metadata_path, "r") as metadata_file:
+    with metadata_path.open("r", encoding="utf-8") as metadata_file:
         try:
             return json.load(metadata_file)
         except json.JSONDecodeError:
@@ -39,7 +58,7 @@ def _read_project_metadata(project_dir):
 
 def _write_project_metadata(project_dir, metadata):
     metadata_path = _project_metadata_path(project_dir)
-    with open(metadata_path, "w") as metadata_file:
+    with metadata_path.open("w", encoding="utf-8") as metadata_file:
         json.dump(metadata, metadata_file)
 
 
@@ -327,14 +346,15 @@ the content of compose.content to it.
 
 
 def write_compose(compose, db):
-    project_dir = resolve_compose_project_path(compose.name)
+    project_dir = _validated_project_dir(resolve_compose_project_path(compose.name))
     host = resolve_host(db, compose.host_id)
-    if not os.path.exists(project_dir):
+    if not project_dir.exists():
         try:
-            pathlib.Path(project_dir).mkdir(parents=True)
+            project_dir.mkdir(parents=True)
         except Exception as exc:
             raise HTTPException(exc.status_code, exc.detail)
-    with open(os.path.join(project_dir, "docker-compose.yml"), "w") as f:
+    compose_file = project_dir / "docker-compose.yml"
+    with compose_file.open("w", encoding="utf-8") as f:
         try:
             f.write(compose.content)
             f.close()
@@ -357,19 +377,19 @@ it exists. This also deletes all files in the folder.
 
 
 def delete_compose(project_name, db, host_id=None):
-    project_dir = resolve_compose_project_path(project_name)
-    compose_file = os.path.join(project_dir, "docker-compose.yml")
+    project_dir = _validated_project_dir(resolve_compose_project_path(project_name))
+    compose_file = project_dir / "docker-compose.yml"
     project_host = _project_host(project_dir, db)
     if host_id is not None and project_host.id != host_id:
         raise HTTPException(404, "Project not found on selected host.")
 
-    if not os.path.exists(project_dir):
+    if not project_dir.exists():
         raise HTTPException(404, "Project directory not found.")
-    elif not os.path.exists(compose_file):
+    elif not compose_file.exists():
         raise HTTPException(404, "Project docker-compose.yml not found.")
     else:
         try:
-            with open(compose_file):
+            with compose_file.open("r", encoding="utf-8"):
                 pass
         except OSError as exc:
             raise HTTPException(400, exc.strerror)
@@ -381,7 +401,7 @@ def delete_compose(project_name, db, host_id=None):
 
 
 def generate_support_bundle(project_name, db, host_id=None):
-    project_dir = resolve_compose_project_path(project_name)
+    project_dir = _validated_project_dir(resolve_compose_project_path(project_name))
     files = find_yml_files(project_dir)
     if project_name in files:
         project_host = _project_host(project_dir, db)
