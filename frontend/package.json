@@ -16,7 +16,7 @@
     "core-js": "^3.13.1",
     "moment": "^2.29.1",
     "register-service-worker": "^1.7.1",
-    "vee-validate": "^3.4.15",
+    "vee-validate": "^4.15.1",
     "vue": "^2.7.16",
     "vue-chartjs": "^3.5.1",
     "vue-chat-scroll": "^1.1.2",
