@@ -1,6 +1,15 @@
 import axios from "axios";
 import router from "@/router/index";
 
+const composeUrl = (path = "", hostId = null) => {
+  const search = new URLSearchParams();
+  if (hostId != null) {
+    search.set("host_id", hostId);
+  }
+  const query = search.toString();
+  return `/api/compose/${path}${query ? `?${query}` : ""}`;
+};
+
 const state = {
   projects: [],
   isLoading: false,
@@ -38,8 +47,8 @@ const mutations = {
 };
 
 const actions = {
-  _readProjects({ commit }) {
-    const url = "/api/compose/";
+  _readProjects({ commit, rootState }) {
+    const url = composeUrl("", rootState.hosts.selectedHostId);
     commit("setLoading", true);
     return new Promise((resolve, reject) => {
       axios
@@ -59,9 +68,9 @@ const actions = {
         });
     });
   },
-  readProjects({ commit }) {
+  readProjects({ commit, rootState }) {
     commit("setLoading", true);
-    const url = "/api/compose/";
+    const url = composeUrl("", rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -75,8 +84,8 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  readProject({ commit }, Name) {
-    const url = `/api/compose/${Name}`;
+  readProject({ commit, rootState }, Name) {
+    const url = composeUrl(Name, rootState.hosts.selectedHostId);
     commit("setLoading", true);
     return new Promise((resolve, reject) => {
       axios
@@ -96,11 +105,15 @@ const actions = {
         });
     });
   },
-  writeProject({ commit }, payload) {
+  writeProject({ commit, rootState }, payload) {
     commit("setLoading", true);
-    const url = "/api/compose/";
+    const url = composeUrl("", rootState.hosts.selectedHostId);
+    const requestPayload = {
+      ...payload,
+      host_id: rootState.hosts.selectedHostId
+    };
     axios
-      .post(url, payload)
+      .post(url, requestPayload)
       .then(response => {
         const projects = response.data;
         commit("setProjects", projects);
@@ -113,10 +126,13 @@ const actions = {
         router.push({ name: "Projects" });
       });
   },
-  ProjectAction({ commit, dispatch }, { Name, Action }) {
+  ProjectAction({ commit, dispatch, rootState }, { Name, Action }) {
     commit("setLoading", true);
     commit("setAction", Action);
-    const url = `/api/compose/${Name}/actions/${Action}`;
+    const url = composeUrl(
+      `${Name}/actions/${Action}`,
+      rootState.hosts.selectedHostId
+    );
     axios
       .get(url)
       .then(response => {
@@ -136,10 +152,13 @@ const actions = {
         commit("setAction", "");
       });
   },
-  ProjectAppAction({ commit, dispatch }, { Project, Name, Action }) {
+  ProjectAppAction({ commit, dispatch, rootState }, { Project, Name, Action }) {
     commit("setLoading", true);
     commit("setAction", Action);
-    const url = `/api/compose/${Project}/actions/${Action}/${Name}`;
+    const url = composeUrl(
+      `${Project}/actions/${Action}/${Name}`,
+      rootState.hosts.selectedHostId
+    );
     axios
       .get(url)
       .then(response => {

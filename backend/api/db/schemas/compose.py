@@ -8,6 +8,7 @@ class Compose(BaseModel):
 
 class ComposeWrite(Compose):
     content: Optional[Any]
+    host_id: Optional[int]
 
 
 class ComposeRead(ComposeWrite):

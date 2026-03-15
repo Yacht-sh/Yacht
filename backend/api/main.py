@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -14,8 +15,9 @@ from api.db.database import SessionLocal, engine, Base
 from api.db.schemas.users import UserCreate
 from api.db.crud.settings import generate_secret_key
 from api.db.crud.users import create_user, get_users
-from api.routers import apps, app_settings, compose, resources, templates, users
+from api.routers import apps, app_settings, compose, hosts, resources, templates, users
 from api.db.crud.templates import read_template_variables, set_template_variables
+from api.db.crud.hosts import ensure_local_host
 
 app = FastAPI(root_path="/api")
 
@@ -62,6 +64,7 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
 
 
 app.include_router(users.router, prefix="/auth", tags=["users"])
+app.include_router(hosts.router, prefix="/hosts", tags=["hosts"])
 app.include_router(apps.router, prefix="/apps", tags=["apps"])
 app.include_router(
     resources.router,
@@ -82,6 +85,7 @@ async def startup(db: Session = Depends(get_db)):
     Base.metadata.create_all(bind=engine)
     startup_db = SessionLocal()
     try:
+        ensure_local_host(db=startup_db)
         generate_secret_key(db=startup_db)
         users_exist = get_users(db=startup_db)
     finally:
@@ -94,10 +98,9 @@ async def startup(db: Session = Depends(get_db)):
         + ")"
     )
     if users_exist:
-        print("Users Exist")
+        pass
     else:
         print("No Users. Creating the default user.")
-        # This is where I'm having trouble
         user = UserCreate(
             username=settings.ADMIN_EMAIL, password=settings.ADMIN_PASSWORD
         )
@@ -112,7 +115,7 @@ async def startup(db: Session = Depends(get_db)):
     finally:
         template_db.close()
     if template_variables_exist:
-        print("Template Variables Exist")
+        pass
     else:
         print("No Variables yet!")
         t_vars = settings.BASE_TEMPLATE_VARIABLES
@@ -130,4 +133,9 @@ async def startup(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=os.environ.get("HOST", "127.0.0.1"),
+        port=8000,
+        reload=True,
+    )

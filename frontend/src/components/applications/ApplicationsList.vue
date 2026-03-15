@@ -35,6 +35,7 @@
       </v-card-title>
 
       <v-card-title color="secondary">
+        <v-chip small color="secondary">{{ activeHostLabel }}</v-chip>
         <v-btn class="ml-2" @click="checkUpdate(apps)" color="secondary">
           <span v-if="$vuetify.breakpoint.mdAndUp">Updates</span>
           <v-icon>mdi-update</v-icon>
@@ -222,6 +223,11 @@
             <span>{{ item.State.Status }} </span>
           </div>
         </template>
+        <template v-slot:item.host="{ item }">
+          <v-chip small color="secondary">
+            {{ item.YachtHost ? item.YachtHost.name : "local" }}
+          </v-chip>
+        </template>
         <template v-slot:item.ports="{ item }">
           <ins
             v-for="(port, index) in convPorts(item.ports)"
@@ -306,6 +312,11 @@ export default {
           value: "project",
           sortable: true
         },
+        host: {
+          text: "Host",
+          value: "host",
+          sortable: true
+        },
         status: {
           text: "Status",
           value: "status",
@@ -369,8 +380,18 @@ export default {
       "updatable",
       "isLoadingValue"
     ]),
+    ...mapState("hosts", ["selectedHostId", "hosts"]),
+    activeHostLabel() {
+      const selectedHost = this.hosts.find(host => host.id === this.selectedHostId);
+      return selectedHost ? selectedHost.name : "Local";
+    },
     showHeaders() {
       return this.headers.filter(s => this.selectedHeaders.includes(s));
+    }
+  },
+  watch: {
+    selectedHostId() {
+      this.readApps();
     }
   },
   created() {

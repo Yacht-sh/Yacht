@@ -202,7 +202,7 @@
 <script>
 import { ValidationObserver, ValidationProvider } from "vee-validate";
 import axios from "axios";
-import { mapMutations } from "vuex";
+import { mapMutations, mapState } from "vuex";
 
 export default {
   components: {
@@ -261,14 +261,23 @@ export default {
       ]
     };
   },
+  computed: {
+    ...mapState("hosts", ["selectedHostId"])
+  },
   methods: {
     ...mapMutations({
       setErr: "snackbar/setErr"
     }),
     submit() {
       const payload = { ...this.form };
+      const query = new URLSearchParams();
+      if (this.selectedHostId != null) {
+        query.set("host_id", this.selectedHostId);
+      }
       this.isLoading = true;
-      const url = `/api/resources/networks/`;
+      const url = `/api/resources/networks/${
+        query.toString() ? `?${query.toString()}` : ""
+      }`;
       axios
         .post(url, payload)
         .then(() => {
