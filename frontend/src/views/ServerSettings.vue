@@ -30,6 +30,10 @@
                   Prune
                 </v-tab>
                 <v-tab class="text-left">
+                  <v-icon left class="mr-1">mdi-server-network</v-icon>
+                  Hosts
+                </v-tab>
+                <v-tab class="text-left">
                   <v-icon left class="mr-1">mdi-update</v-icon>
                   Update
                 </v-tab>
@@ -55,6 +59,9 @@
                     <Prune />
                   </v-tab-item>
                   <v-tab-item>
+                    <Hosts />
+                  </v-tab-item>
+                  <v-tab-item>
                     <Update />
                   </v-tab-item>
                 </v-tabs-items>
@@ -74,13 +81,15 @@ import Variables from "../components/serverSettings/ServerVariables";
 import Theme from "../components/serverSettings/Theme";
 import Prune from "../components/serverSettings/Prune";
 import Update from "../components/serverSettings/ServerUpdate";
+import Hosts from "../components/serverSettings/Hosts";
 export default {
   components: {
     Info: Info,
     Variables: Variables,
     Theme: Theme,
     Prune: Prune,
-    Update: Update
+    Update: Update,
+    Hosts: Hosts
   },
   data() {
     return {

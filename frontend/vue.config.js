@@ -6,24 +6,15 @@ module.exports = {
   devServer: {
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: "http://127.0.0.1:8000",
         timeout: 6000,
         ws: true,
         changeOrigin: true,
         pathRewrite: {
-          "^/api": ""
+          "^/api": "",
         },
-        logLevel: "debug"
-      }
-    }
+        logLevel: "debug",
+      },
+    },
   },
-
-  pwa: {
-    name: "Yacht",
-    themeColor: "#41B883",
-    workboxOptions: {
-      skipWaiting: true,
-      clientsClaim: true,
-    }
-  }
 };

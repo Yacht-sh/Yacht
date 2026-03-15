@@ -1,6 +1,15 @@
 import axios from "axios";
 import router from "@/router/index";
 
+const resourceUrl = (path = "", hostId = null) => {
+  const search = new URLSearchParams();
+  if (hostId != null) {
+    search.set("host_id", hostId);
+  }
+  const query = search.toString();
+  return `/api/resources/volumes/${path}${query ? `?${query}` : ""}`;
+};
+
 const state = {
   volumes: [],
   isLoading: false
@@ -34,8 +43,8 @@ const mutations = {
 };
 
 const actions = {
-  _readVolumes({ commit }) {
-    const url = "/api/resources/volumes/";
+  _readVolumes({ commit, rootState }) {
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     commit("setLoading", true);
     return new Promise((resolve, reject) => {
       axios
@@ -55,9 +64,9 @@ const actions = {
         });
     });
   },
-  readVolumes({ commit }) {
+  readVolumes({ commit, rootState }) {
     commit("setLoading", true);
-    const url = "/api/resources/volumes/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -71,9 +80,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  readVolume({ commit }, id) {
+  readVolume({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/volumes/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -87,9 +96,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  writeVolume({ commit }, payload) {
+  writeVolume({ commit, rootState }, payload) {
     commit("setLoading", true);
-    const url = "/api/resources/volumes/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .post(url, payload)
       .then(response => {
@@ -104,9 +113,9 @@ const actions = {
         router.push({ name: "Volumes" });
       });
   },
-  updateVolume({ commit }, id) {
+  updateVolume({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/volumes/${id}/pull`;
+    const url = resourceUrl(`${id}/pull`, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -120,9 +129,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  deleteVolume({ commit }, id) {
+  deleteVolume({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/volumes/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .delete(url)
       .then(response => {

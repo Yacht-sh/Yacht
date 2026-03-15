@@ -55,6 +55,7 @@ class DeployForm(BaseModel):
     mem_limit: Optional[str]
     edit: Optional[bool]
     id: Optional[str]
+    host_id: Optional[int]
 
 
 # LOGS #

@@ -1,5 +1,4 @@
 <script>
-import "chartjs-plugin-crosshair";
 import { Line, mixins } from "vue-chartjs"; // We specify what type of chart we want from vue-chartjs and the mixins module
 const { reactiveProp } = mixins;
 export default {
@@ -19,22 +18,6 @@ export default {
           duration: 0
         },
         responsiveAnimationDuration: 0,
-        plugins: {
-          crosshair: {
-            line: {
-              color: "#454D55",
-              width: 1
-            },
-            sync: {
-              enabled: false,
-              group: 1,
-              suppressTooltips: false
-            },
-            zoom: {
-              enabled: false
-            }
-          }
-        },
         tooltips: {
           mode: "index",
           intersect: false,

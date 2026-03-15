@@ -18,6 +18,9 @@
               </v-card-title>
               <v-card-title v-if="this.existing" class="mt-1">
                 Edit {{ this.form.name }} Project
+                <v-chip small class="ml-3" color="secondary">
+                  {{ activeHostLabel }}
+                </v-chip>
               </v-card-title>
             </v-col>
             <v-col class="flex-grow-1 flex-shrink-0">
@@ -52,7 +55,7 @@
 </template>
 
 <script>
-import { mapActions, mapMutations } from "vuex";
+import { mapActions, mapMutations, mapState } from "vuex";
 import axios from "axios";
 export default {
   data() {
@@ -68,6 +71,13 @@ export default {
   },
   components: {
     editor: require("vue2-ace-editor")
+  },
+  computed: {
+    ...mapState("hosts", ["selectedHostId", "hosts"]),
+    activeHostLabel() {
+      const selectedHost = this.hosts.find(host => host.id === this.selectedHostId);
+      return selectedHost ? selectedHost.name : "Local";
+    }
   },
   methods: {
     ...mapMutations({
@@ -90,8 +100,12 @@ export default {
     },
     submitCompose() {
       let url = `/api/compose/${this.form.name}/edit`;
+      const payload = {
+        ...this.form,
+        host_id: this.selectedHostId
+      };
       axios
-        .post(url, this.form, {})
+        .post(url, payload, {})
         .then(response => {
           this.$router.push({ path: `/projects/${response.data.name}` });
         })
