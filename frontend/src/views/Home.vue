@@ -2,6 +2,7 @@
   <v-card color="foreground">
     <v-card-title class="primary font-weight-bold">
       Dashboard <v-icon v-on:click="refresh()">mdi-refresh</v-icon>
+      <v-chip small class="ml-3" color="secondary">{{ activeHostLabel }}</v-chip>
     </v-card-title>
     <v-card-text class="secondary text-center px-5 py-5">
       <v-row dense class="mt-3">
@@ -76,6 +77,14 @@ export default {
     ...mapActions({
       readApps: "apps/readApps",
     }),
+    statsUrl() {
+      const query = new URLSearchParams();
+      if (this.selectedHostId != null) {
+        query.set("host_id", this.selectedHostId);
+      }
+      const suffix = query.toString();
+      return `/api/apps/stats${suffix ? `?${suffix}` : ""}`;
+    },
     formatBytes(bytes, decimals = 2) {
       if (bytes === 0) return "0 Bytes";
 
@@ -88,7 +97,7 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
     },
     readAppStats() {
-      this.statConnection = new EventSource(`/api/apps/stats`);
+      this.statConnection = new EventSource(this.statsUrl());
       this.statConnection.addEventListener("update", event => {
         let statsGroup = JSON.parse(event.data);
         if (!(statsGroup.name in this.stats)) {
@@ -133,7 +142,9 @@ export default {
       this.$router.push({ path: `/apps/${appName}/info` });
     },
     closeStats() {
-      this.statConnection.close();
+      if (this.statConnection && this.statConnection.close) {
+        this.statConnection.close();
+      }
       this.stats = {};
     },
     fillStats(app) {
@@ -157,10 +168,23 @@ export default {
   },
   computed: {
     ...mapState("apps", ["apps"]),
+    ...mapState("hosts", ["selectedHostId"]),
+    ...mapState({
+      activeHostLabel: state => state.hosts.hosts.find(
+        host => host.id === state.hosts.selectedHostId
+      )?.name || "Local"
+    })
   },
   async created() {
     await this.readApps();
     this.readAppStats();
+  },
+  watch: {
+    async selectedHostId() {
+      this.closeStats();
+      await this.readApps();
+      this.readAppStats();
+    }
   },
   beforeDestroy() {
     this.closeStats();

@@ -45,6 +45,9 @@
             >
               <v-card-title>
                 {{ app.name }}
+                <v-chip small class="ml-3" color="secondary">
+                  {{ appHostName }}
+                </v-chip>
                 <v-spacer />
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
@@ -53,7 +56,7 @@
                       color="secondary"
                       v-bind="attrs"
                       v-on="on"
-                      :href="`/api/apps/${app.name}/support`"
+                      :href="supportBundleUrl(app.name)"
                       target="_blank"
                       download
                       class="mx-1 my-1 hidden-sm-and-down"
@@ -118,7 +121,7 @@
                       <v-list-item-title>Edit</v-list-item-title>
                     </v-list-item>
                     <v-list-item
-                      :href="`/api/apps/${app.name}/support`"
+                      :href="supportBundleUrl(app.name)"
                       target="_blank"
                       color="primary"
                       download
@@ -375,6 +378,7 @@ export default {
   },
   computed: {
     ...mapState("apps", ["apps", "app", "isLoading", "processes"]),
+    ...mapState("hosts", ["selectedHostId", "hosts"]),
     ...mapGetters({
       getAppByName: "apps/getAppByName",
     }),
@@ -382,6 +386,13 @@ export default {
       const appName = this.$route.params.appName;
       return this.getAppByName(appName);
     },
+    appHostName() {
+      if (this.app && this.app.YachtHost) {
+        return this.app.YachtHost.name;
+      }
+      const selectedHost = this.hosts.find(host => host.id === this.selectedHostId);
+      return selectedHost ? selectedHost.name : "Local";
+    }
   },
   methods: {
     ...mapActions({
@@ -391,6 +402,17 @@ export default {
     }),
     editClick(appName) {
       this.$router.push({ path: `/apps/edit/${appName.Name}` });
+    },
+    appQueryString() {
+      const query = new URLSearchParams();
+      if (this.selectedHostId != null) {
+        query.set("host_id", this.selectedHostId);
+      }
+      const suffix = query.toString();
+      return suffix ? `?${suffix}` : "";
+    },
+    supportBundleUrl(appName) {
+      return `/api/apps/${appName}/support${this.appQueryString()}`;
     },
     refresh() {
       const appName = this.$route.params.appName;
@@ -405,14 +427,18 @@ export default {
       this.$router.push({ name: "View Applications" });
     },
     readAppLogs(appName) {
-      this.logConnection = new EventSource(`/api/apps/${appName}/logs`);
-      this.logConnection.addEventListener("update", (event) => {
+      this.logConnection = new EventSource(
+        `/api/apps/${appName}/logs${this.appQueryString()}`
+      );
+      this.logConnection.addEventListener("update", event => {
         this.logs.push(event.data);
       });
     },
     readAppStats(appName) {
-      this.statConnection = new EventSource(`/api/apps/${appName}/stats`);
-      this.statConnection.addEventListener("update", (event) => {
+      this.statConnection = new EventSource(
+        `/api/apps/${appName}/stats${this.appQueryString()}`
+      );
+      this.statConnection.addEventListener("update", event => {
         let statsGroup = JSON.parse(event.data);
         this.stats.time.push(statsGroup.time);
         this.stats.cpu_percent.push(Math.round(statsGroup.cpu_percent));
@@ -427,11 +453,15 @@ export default {
       });
     },
     closeLogs() {
-      this.logConnection.close();
+      if (this.logConnection && this.logConnection.close) {
+        this.logConnection.close();
+      }
       this.logs = [];
     },
     closeStats() {
-      this.statConnection.close();
+      if (this.statConnection && this.statConnection.close) {
+        this.statConnection.close();
+      }
       this.stats = {
         time: [],
         cpu_percent: [],
@@ -452,6 +482,11 @@ export default {
     await this.readAppProcesses(appName);
     await this.readAppLogs(appName);
     await this.readAppStats(appName);
+  },
+  watch: {
+    selectedHostId() {
+      this.refresh();
+    }
   },
   beforeDestroy() {
     this.closeLogs();

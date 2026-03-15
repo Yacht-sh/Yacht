@@ -14,8 +14,9 @@ from api.db.database import SessionLocal, engine, Base
 from api.db.schemas.users import UserCreate
 from api.db.crud.settings import generate_secret_key
 from api.db.crud.users import create_user, get_users
-from api.routers import apps, app_settings, compose, resources, templates, users
+from api.routers import apps, app_settings, compose, hosts, resources, templates, users
 from api.db.crud.templates import read_template_variables, set_template_variables
+from api.db.crud.hosts import ensure_local_host
 
 app = FastAPI(root_path="/api")
 
@@ -62,6 +63,7 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
 
 
 app.include_router(users.router, prefix="/auth", tags=["users"])
+app.include_router(hosts.router, prefix="/hosts", tags=["hosts"])
 app.include_router(apps.router, prefix="/apps", tags=["apps"])
 app.include_router(
     resources.router,
@@ -82,6 +84,7 @@ async def startup(db: Session = Depends(get_db)):
     Base.metadata.create_all(bind=engine)
     startup_db = SessionLocal()
     try:
+        ensure_local_host(db=startup_db)
         generate_secret_key(db=startup_db)
         users_exist = get_users(db=startup_db)
     finally:

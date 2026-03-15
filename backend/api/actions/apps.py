@@ -20,6 +20,12 @@ from api.utils.apps import (
     calculate_cpu_percent2,
     format_bytes,
 )
+from api.utils.docker_hosts import (
+    docker_base_url,
+    get_docker_client,
+    host_metadata,
+    resolve_host,
+)
 from api.utils.templates import conv2dict
 
 import yaml
@@ -29,9 +35,10 @@ import zipfile
 import time
 import subprocess
 import docker
-import aiodocker
 import asyncio
 import aiostream
+import aiodocker
+from aiodocker.containers import DockerContainer
 
 
 """
@@ -39,16 +46,21 @@ Returns all running apps in a list
 """
 
 
-def get_running_apps():
+def _annotate_with_host(attrs, host):
+    attrs.update(conv2dict("YachtHost", host_metadata(host)))
+    return attrs
+
+
+def get_running_apps(db, host_id=None):
     apps_list = []
-    dclient = docker.from_env()
+    host, dclient = get_docker_client(db, host_id)
     apps = dclient.containers.list()
     for app in apps:
         attrs = app.attrs
         attrs.update(conv2dict("name", app.name))
         attrs.update(conv2dict("ports", app.ports))
         attrs.update(conv2dict("short_id", app.short_id))
-        apps_list.append(attrs)
+        apps_list.append(_annotate_with_host(attrs, host))
 
     return apps_list
 
@@ -61,8 +73,8 @@ TODO: This has issues if there's more than one repo digest
 """
 
 
-def check_app_update(app_name):
-    dclient = docker.from_env()
+def check_app_update(app_name, db, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     try:
         app = dclient.containers.get(app_name)
     except Exception as exc:
@@ -71,12 +83,12 @@ def check_app_update(app_name):
         )
 
     if app.attrs["Config"]["Image"]:
-        if _check_updates(app.attrs["Config"]["Image"]):
+        if _check_updates(app.attrs["Config"]["Image"], dclient=dclient):
             app.attrs.update(conv2dict("isUpdatable", True))
     app.attrs.update(conv2dict("name", app.name))
     app.attrs.update(conv2dict("ports", app.ports))
     app.attrs.update(conv2dict("short_id", app.short_id))
-    return app.attrs
+    return _annotate_with_host(app.attrs, host)
 
 
 """
@@ -85,10 +97,10 @@ properties that aren't in the app attributes
 """
 
 
-def get_apps():
+def get_apps(db, host_id=None):
     apps_list = []
     try:
-        dclient = docker.from_env()
+        host, dclient = get_docker_client(db, host_id)
     except docker.errors.DockerException as exc:
         raise HTTPException(status_code=500, detail=exc.args)
     try:
@@ -103,7 +115,7 @@ def get_apps():
         attrs.update(conv2dict("name", app.name))
         attrs.update(conv2dict("ports", app.ports))
         attrs.update(conv2dict("short_id", app.short_id))
-        apps_list.append(attrs)
+        apps_list.append(_annotate_with_host(attrs, host))
 
     return apps_list
 
@@ -115,8 +127,8 @@ attributes
 """
 
 
-def get_app(app_name):
-    dclient = docker.from_env()
+def get_app(app_name, db, host_id=None):
+    host, dclient = get_docker_client(db, host_id)
     try:
         app = dclient.containers.get(app_name)
     except Exception as exc:
@@ -129,7 +141,7 @@ def get_app(app_name):
     attrs.update(conv2dict("short_id", app.short_id))
     attrs.update(conv2dict("name", app.name))
 
-    return attrs
+    return _annotate_with_host(attrs, host)
 
 
 """
@@ -137,8 +149,8 @@ Get processes running in an app.
 """
 
 
-def get_app_processes(app_name):
-    dclient = docker.from_env()
+def get_app_processes(app_name, db, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
     if app.status == "running":
         processes = app.top()
@@ -153,8 +165,8 @@ via a websocket in routers so they're realtime)
 """
 
 
-def get_app_logs(app_name):
-    dclient = docker.from_env()
+def get_app_logs(app_name, db, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
     if app.status == "running":
         return AppLogs(logs=app.logs())
@@ -168,9 +180,10 @@ Deploy a new app. Format is available in
 """
 
 
-def deploy_app(template: DeployForm):
+def deploy_app(template: DeployForm, db):
     try:
         launch = launch_app(
+            db,
             template.name,
             conv_image2data(template.image),
             conv_restart2data(template.restart_policy),
@@ -189,6 +202,7 @@ def deploy_app(template: DeployForm):
             template.mem_limit,
             edit=template.edit or False,
             _id=template.id or None,
+            host_id=template.host_id,
         )
     except HTTPException as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail)
@@ -228,6 +242,7 @@ a new one.
 
 
 def launch_app(
+    db,
     name,
     image,
     restart_policy,
@@ -246,8 +261,9 @@ def launch_app(
     mem_limit,
     edit,
     _id,
+    host_id=None,
 ):
-    dclient = docker.from_env()
+    _, dclient = get_docker_client(db, host_id)
     if edit == True:
         try:
             dclient.containers.get(_id)
@@ -304,9 +320,9 @@ Runs an app action (ie. docker stop, docker start, etc.)
 """
 
 
-def app_action(app_name, action):
+def app_action(app_name, action, db, host_id=None):
     err = None
-    dclient = docker.from_env()
+    _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
     _action = getattr(app, action)
     if action == "remove":
@@ -323,7 +339,7 @@ def app_action(app_name, action):
             raise HTTPException(
                 status_code=exc.response.status_code, detail=exc.explanation
             )
-    apps_list = get_apps()
+    apps_list = get_apps(db=db, host_id=host_id)
     return apps_list
 
 
@@ -333,8 +349,8 @@ and --cleanup flags and targets a container by name
 """
 
 
-def app_update(app_name):
-    dclient = docker.from_env()
+def app_update(app_name, db, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     try:
         old = dclient.containers.get(app_name)
     except Exception as exc:
@@ -368,7 +384,7 @@ def app_update(app_name):
     result = updater.wait(timeout=120)
     print(result)
     time.sleep(1)
-    return get_apps()
+    return get_apps(db=db, host_id=host_id)
 
 
 """
@@ -451,8 +467,8 @@ def check_self_update():
     return _check_updates(yacht.image.tags[0])
 
 
-def generate_support_bundle(app_name):
-    dclient = docker.from_env()
+def generate_support_bundle(app_name, db, host_id=None):
+    _, dclient = get_docker_client(db, host_id)
     if dclient.containers.get(app_name):
         app = dclient.containers.get(app_name)
         stream = io.BytesIO()
@@ -476,9 +492,10 @@ def generate_support_bundle(app_name):
         raise HTTPException(404, f"App {app_name} not found.")
 
 
-async def log_generator(request, app_name):
+async def log_generator(request, app_name, db, host_id=None):
+    host = resolve_host(db, host_id)
     while True:
-        async with aiodocker.Docker() as docker:
+        async with aiodocker.Docker(url=docker_base_url(host)) as docker:
             container: DockerContainer = await docker.containers.get(app_name)
             if container._container["State"]["Status"] == "running":
                 logs_generator = container.log(
@@ -491,10 +508,11 @@ async def log_generator(request, app_name):
                 break
 
 
-async def stat_generator(request, app_name):
+async def stat_generator(request, app_name, db, host_id=None):
     prev_stats = None
+    host = resolve_host(db, host_id)
     while True:
-        async with aiodocker.Docker() as adocker:
+        async with aiodocker.Docker(url=docker_base_url(host)) as adocker:
             container: DockerContainer = await adocker.containers.get(app_name)
             if container._container["State"]["Status"] == "running":
                 stats_generator = container.stats(stream=True)
@@ -517,17 +535,21 @@ async def stat_generator(request, app_name):
             # so there's no point in checking more often than that
             await asyncio.sleep(1)
 
-async def all_stat_generator(request):
-    async with aiodocker.Docker() as docker:
+async def all_stat_generator(request, db, host_id=None):
+    host = resolve_host(db, host_id)
+    async with aiodocker.Docker(url=docker_base_url(host)) as docker:
         containers = []
         _containers = await docker.containers.list()
         for _app in _containers:
             if _app._container["State"] == "running":
                 containers.append(_app)
-        loops = [stat_generator(request, app._container["Names"][0][1:]) for app in containers]
+        loops = [
+            stat_generator(request, app._container["Names"][0][1:], db, host_id)
+            for app in containers
+        ]
         async with aiostream.stream.merge(*loops).stream() as merged:
-                    async for event in merged:
-                        yield event
+            async for event in merged:
+                yield event
 
 
 async def process_app_stats(line, app_name):

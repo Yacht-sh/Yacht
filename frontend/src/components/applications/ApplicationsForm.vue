@@ -858,9 +858,10 @@ export default {
       ]
     };
   },
-  calculated: {
+  computed: {
     ...mapState("networks", ["networks"]),
-    ...mapState("volumes", ["volumes"])
+    ...mapState("volumes", ["volumes"]),
+    ...mapState("hosts", ["selectedHostId"])
   },
   methods: {
     ...mapActions({
@@ -1008,7 +1009,7 @@ export default {
       }
     },
     submitFormData() {
-      const payload = { ...this.form };
+      const payload = { ...this.form, host_id: this.selectedHostId };
       this.isLoading = true;
       const url = `/api/apps/deploy`;
       axios

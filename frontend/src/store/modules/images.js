@@ -1,6 +1,15 @@
 import axios from "axios";
 import router from "@/router/index";
 
+const resourceUrl = (path = "", hostId = null) => {
+  const search = new URLSearchParams();
+  if (hostId != null) {
+    search.set("host_id", hostId);
+  }
+  const query = search.toString();
+  return `/api/resources/images/${path}${query ? `?${query}` : ""}`;
+};
+
 const state = {
   images: [],
   isLoading: false
@@ -34,9 +43,9 @@ const mutations = {
 };
 
 const actions = {
-  readImages({ commit }) {
+  readImages({ commit, rootState }) {
     commit("setLoading", true);
-    const url = "/api/resources/images/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -50,9 +59,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  readImage({ commit }, id) {
+  readImage({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/images/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -66,9 +75,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  writeImage({ commit }, payload) {
+  writeImage({ commit, rootState }, payload) {
     commit("setLoading", true);
-    const url = "/api/resources/images/";
+    const url = resourceUrl("", rootState.hosts.selectedHostId);
     axios
       .post(url, payload)
       .then(response => {
@@ -83,9 +92,9 @@ const actions = {
         router.push({ name: "Images" });
       });
   },
-  updateImage({ commit, dispatch }, id) {
+  updateImage({ commit, dispatch, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/images/${id}/pull`;
+    const url = resourceUrl(`${id}/pull`, rootState.hosts.selectedHostId);
     axios
       .get(url)
       .then(response => {
@@ -100,9 +109,9 @@ const actions = {
         commit("setLoading", false);
       });
   },
-  deleteImage({ commit }, id) {
+  deleteImage({ commit, rootState }, id) {
     commit("setLoading", true);
-    const url = `/api/resources/images/${id}`;
+    const url = resourceUrl(id, rootState.hosts.selectedHostId);
     axios
       .delete(url)
       .then(response => {
