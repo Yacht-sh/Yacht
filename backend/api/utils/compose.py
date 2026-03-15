@@ -42,13 +42,12 @@ def resolve_compose_project_path(project_name):
     return resolve_compose_path(os.path.join(get_compose_base_dir(), project_name))
 
 
-def find_yml_files(path):
+def _find_yml_files_in_dir(root_dir):
     """
-    find docker-compose.yml files in path
+    Find docker compose files inside a validated compose directory.
     """
     matches = {}
-    safe_path = resolve_compose_path(path)
-    for root, _, filenames in os.walk(safe_path, followlinks=False):
+    for root, _, filenames in os.walk(root_dir, followlinks=False):
         for _ in set().union(
             fnmatch.filter(filenames, "compose.yml"),
             fnmatch.filter(filenames, "compose.yaml"),
@@ -58,6 +57,20 @@ def find_yml_files(path):
             key = os.path.basename(root)
             matches[key] = os.path.realpath(os.path.join(root, _))
     return matches
+
+
+def find_yml_files():
+    """
+    Find docker compose files under the compose base directory.
+    """
+    return _find_yml_files_in_dir(get_compose_base_dir())
+
+
+def find_project_yml_files(project_name):
+    """
+    Find docker compose files for a single validated project.
+    """
+    return _find_yml_files_in_dir(resolve_compose_project_path(project_name))
 
 
 def get_readme_file(path):

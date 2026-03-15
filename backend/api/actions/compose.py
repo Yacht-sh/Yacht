@@ -17,7 +17,11 @@ import re
 
 from api.db.models.hosts import Host
 from api.settings import Settings
-from api.utils.compose import find_yml_files, resolve_compose_project_path
+from api.utils.compose import (
+    find_project_yml_files,
+    find_yml_files,
+    resolve_compose_project_path,
+)
 from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
 
 settings = Settings()
@@ -88,7 +92,6 @@ Runs an action on the specified compose project.
 
 
 def compose_action(name, action, db, host_id=None):
-    files = find_yml_files(settings.COMPOSE_DIR)
     compose = get_compose(name, db, host_id)
     host = _project_host(compose["name"], db)
     if action == "up":
@@ -167,8 +170,6 @@ def compose_app_action(
     db,
     host_id=None,
 ):
-
-    files = find_yml_files(settings.COMPOSE_DIR)
     compose = get_compose(name, db, host_id)
     host = _project_host(compose["name"], db)
     print("RUNNING: " + compose["path"] + " docker-compose " + " " + action + " " + app)
@@ -247,7 +248,7 @@ returns most of the info inside them.
 
 
 def get_compose_projects(db, host_id=None):
-    files = find_yml_files(settings.COMPOSE_DIR)
+    files = find_yml_files()
     host = resolve_host(db, host_id)
 
     projects = []
@@ -293,11 +294,11 @@ project.
 
 def get_compose(name, db, host_id=None):
     try:
-        project_dir = resolve_compose_project_path(name)
+        project_dir = _validated_project_dir(name)
         project_host = _project_host(name, db)
         if host_id is not None and project_host.id != host_id:
             raise HTTPException(404, "Project not found on selected host.")
-        files = find_yml_files(project_dir)
+        files = find_project_yml_files(name)
     except Exception as exc:
         raise HTTPException(exc.status_code, exc.detail)
     for project, file in files.items():
@@ -404,7 +405,7 @@ def delete_compose(project_name, db, host_id=None):
 def generate_support_bundle(project_name, db, host_id=None):
     project_name = _validated_project_name(project_name)
     project_dir = _validated_project_dir(project_name)
-    files = find_yml_files(project_dir)
+    files = find_project_yml_files(project_name)
     if project_name in files:
         project_host = _project_host(project_name, db)
         if host_id is not None and project_host.id != host_id:
