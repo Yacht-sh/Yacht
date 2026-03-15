@@ -41,7 +41,7 @@
     "prettier": "^1.19.1",
     "sass": "^1.34.0",
     "serialize-javascript": "^7.0.3",
-    "sass-loader": "^8.0.0",
+    "sass-loader": "^16.0.7",
     "vue-cli-plugin-vuetify": "^2.5.8",
     "vue-template-compiler": "^2.7.16",
     "vuetify-loader": "^1.9.2"
