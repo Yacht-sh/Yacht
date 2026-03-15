@@ -20,7 +20,7 @@
     "vue": "^2.7.16",
     "vue-chartjs": "^3.5.1",
     "vue-chat-scroll": "^1.1.2",
-    "vue-router": "^3.6.5",
+    "vue-router": "^5.0.3",
     "vue2-ace-editor": "0.0.15",
     "vuetify": "^2.7.2",
     "vuex": "^3.6.2"
