@@ -18,8 +18,10 @@ import re
 from api.db.models.hosts import Host
 from api.settings import Settings
 from api.utils.compose import (
+    ensure_compose_path,
     find_project_yml_files,
     find_yml_files,
+    get_compose_base_dir,
     resolve_compose_project_path,
 )
 from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
@@ -40,13 +42,25 @@ def _validated_project_name(project_name):
 
 
 def _validated_project_dir(project_name):
-    return pathlib.Path(
+    base_dir = pathlib.Path(get_compose_base_dir()).resolve()
+    project_dir = pathlib.Path(
         resolve_compose_project_path(_validated_project_name(project_name))
-    )
+    ).resolve()
+    try:
+        project_dir.relative_to(base_dir)
+    except ValueError as exc:
+        raise HTTPException(400, "Path escapes compose directory.") from exc
+    return project_dir
 
 
 def _project_metadata_path(project_name):
-    return _validated_project_dir(project_name) / ".yacht.json"
+    metadata_path = (_validated_project_dir(project_name) / ".yacht.json").resolve()
+    base_dir = pathlib.Path(get_compose_base_dir()).resolve()
+    try:
+        metadata_path.relative_to(base_dir)
+    except ValueError as exc:
+        raise HTTPException(400, "Path escapes compose directory.") from exc
+    return metadata_path
 
 
 def _read_project_metadata(project_name):
@@ -258,8 +272,8 @@ def get_compose_projects(db, host_id=None):
         volumes = []
         networks = []
         services = {}
-        compose = open(file)
-        loaded_compose = yaml.load(compose, Loader=yaml.SafeLoader)
+        with open(file, encoding="utf-8") as compose_file:
+            loaded_compose = yaml.load(compose_file, Loader=yaml.SafeLoader)
         if loaded_compose:
             if loaded_compose.get("volumes"):
                 for volume in loaded_compose.get("volumes"):
@@ -299,18 +313,20 @@ def get_compose(name, db, host_id=None):
         if host_id is not None and project_host.id != host_id:
             raise HTTPException(404, "Project not found on selected host.")
         files = find_project_yml_files(name)
-    except Exception as exc:
-        raise HTTPException(exc.status_code, exc.detail)
+    except HTTPException:
+        raise
     for project, file in files.items():
         if name == project:
             networks = []
             volumes = []
             services = {}
-            compose = open(file)
             try:
-                loaded_compose = yaml.load(compose, Loader=yaml.SafeLoader)
+                with open(file, encoding="utf-8") as compose_file:
+                    loaded_compose = yaml.load(compose_file, Loader=yaml.SafeLoader)
             except yaml.scanner.ScannerError as exc:
                 raise HTTPException(422, f"{exc.problem_mark.line}:{exc.problem_mark.column} - {exc.problem}")
+            except OSError as exc:
+                raise HTTPException(400, exc.strerror) from exc
             if loaded_compose.get("volumes"):
                 for volume in loaded_compose.get("volumes"):
                     volumes.append(volume)
@@ -320,8 +336,8 @@ def get_compose(name, db, host_id=None):
             if loaded_compose.get("services"):
                 for service in loaded_compose.get("services"):
                     services[service] = loaded_compose["services"][service]
-            _content = open(file)
-            content = _content.read()
+            with open(file, encoding="utf-8") as content_file:
+                content = content_file.read()
             compose_object = {
                 "name": project,
                 "path": file,
@@ -352,20 +368,20 @@ def write_compose(compose, db):
     if not project_dir.exists():
         try:
             project_dir.mkdir(parents=True)
-        except Exception as exc:
-            raise HTTPException(exc.status_code, exc.detail)
+        except OSError as exc:
+            raise HTTPException(400, exc.strerror) from exc
     compose_file = project_dir / "docker-compose.yml"
     with compose_file.open("w", encoding="utf-8") as f:
         try:
             f.write(compose.content)
-            f.close()
         except TypeError as exc:
             if exc.args[0] == "write() argument must be str, not None":
                 raise HTTPException(
                     status_code=422, detail="Compose file cannot be empty."
                 )
-        except Exception as exc:
-            raise HTTPException(exc.status_code, exc.detail)
+            raise HTTPException(422, "Invalid compose content.") from exc
+        except OSError as exc:
+            raise HTTPException(400, exc.strerror) from exc
     _write_project_metadata(project_name, {"host_id": host.id})
 
     return get_compose(name=compose.name, db=db, host_id=host.id)
@@ -394,11 +410,11 @@ def delete_compose(project_name, db, host_id=None):
             with compose_file.open("r", encoding="utf-8"):
                 pass
         except OSError as exc:
-            raise HTTPException(400, exc.strerror)
+            raise HTTPException(400, exc.strerror) from exc
     try:
-        shutil.rmtree(project_dir)
-    except Exception as exc:
-        raise HTTPException(exc.status_code, exc.strerror)
+        shutil.rmtree(ensure_compose_path(project_dir))
+    except OSError as exc:
+        raise HTTPException(400, exc.strerror) from exc
     return get_compose_projects(db, host_id)
 
 
@@ -412,7 +428,10 @@ def generate_support_bundle(project_name, db, host_id=None):
             raise HTTPException(404, "Project not found on selected host.")
         _, dclient = get_docker_client(db, project_host.id)
         stream = io.BytesIO()
-        with zipfile.ZipFile(stream, "w") as zf, open(files[project_name], "r") as fp:
+        compose_path = ensure_compose_path(files[project_name])
+        with zipfile.ZipFile(stream, "w") as zf, compose_path.open(
+            "r", encoding="utf-8"
+        ) as fp:
             compose = yaml.load(fp, Loader=yaml.SafeLoader)
             # print(compose)
             # print(compose.get("services"))

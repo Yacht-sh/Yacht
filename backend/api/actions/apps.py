@@ -33,7 +33,7 @@ import json
 import io
 import zipfile
 import time
-import subprocess
+import re
 import docker
 import asyncio
 import aiostream
@@ -233,6 +233,27 @@ def Merge(dict1, dict2):
         return None
 
 
+def _current_container_id():
+    try:
+        with open("/proc/self/cgroup", encoding="utf-8") as cgroup_file:
+            for line in cgroup_file:
+                candidate = line.strip().split("/")[-1]
+                if not candidate:
+                    continue
+                if candidate.endswith(".scope"):
+                    candidate = candidate[:-6]
+                for prefix in ("docker-", "libpod-", "cri-containerd-"):
+                    if candidate.startswith(prefix):
+                        candidate = candidate[len(prefix) :]
+                        break
+                if re.fullmatch(r"[0-9a-f]{12,64}", candidate):
+                    return candidate
+    except OSError as exc:
+        raise HTTPException(500, f"Unable to read container metadata: {exc.strerror}") from exc
+
+    raise HTTPException(500, "Unable to determine Yacht container ID")
+
+
 """
 This function actually runs the docker run command.
 It also checks if edit is set to true so it can 
@@ -266,15 +287,14 @@ def launch_app(
     _, dclient = get_docker_client(db, host_id)
     if edit == True:
         try:
-            dclient.containers.get(_id)
+            running_app = dclient.containers.get(_id)
             try:
-                running_app = dclient.containers.get(_id)
                 running_app.remove(force=True)
-            except Exception as e:
-                raise e
-        except Exception as e:
+            except docker.errors.DockerException:
+                raise
+        except docker.errors.NotFound:
             # User probably changed the name so it doesn't conflict. If this is the case we'll just spin up a second container.
-            pass
+            running_app = None
 
     combined_labels = Merge(portlabels, labels)
     try:
@@ -396,10 +416,7 @@ background task.
 
 def _update_self(background_tasks):
     dclient = docker.from_env()
-    bash_command = "head -1 /proc/self/cgroup|cut -d/ -f3"
-    yacht_id = (
-        subprocess.check_output(["bash", "-c", bash_command]).decode("UTF-8").strip()
-    )
+    yacht_id = _current_container_id()
     try:
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:
@@ -444,10 +461,7 @@ to the local digest to see if there's an updata available.
 
 def check_self_update():
     dclient = docker.from_env()
-    bash_command = "head -1 /proc/self/cgroup|cut -d/ -f3"
-    yacht_id = (
-        subprocess.check_output(["bash", "-c", bash_command]).decode("UTF-8").strip()
-    )
+    yacht_id = _current_container_id()
     try:
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:

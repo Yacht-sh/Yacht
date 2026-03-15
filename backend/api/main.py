@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -132,4 +133,9 @@ async def startup(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=os.environ.get("HOST", "127.0.0.1"),
+        port=8000,
+        reload=True,
+    )

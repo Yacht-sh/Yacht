@@ -2,12 +2,14 @@ from ..settings import Settings
 from fastapi import HTTPException
 import os
 import fnmatch
+import pathlib
 
 settings = Settings()
 
 
 def get_compose_base_dir():
-    return os.path.realpath(os.path.abspath(settings.COMPOSE_DIR))
+    base_dir = os.path.realpath(os.path.abspath(settings.COMPOSE_DIR))
+    return base_dir.rstrip(os.sep)
 
 
 def resolve_compose_path(path):
@@ -24,9 +26,22 @@ def resolve_compose_path(path):
         common = os.path.commonpath([base_dir, resolved])
     except ValueError:
         raise HTTPException(400, "Invalid compose path.")
-    if common != base_dir:
+    base_dir_with_sep = base_dir if base_dir.endswith(os.sep) else base_dir + os.sep
+    if common != base_dir or not (
+        resolved == base_dir or resolved.startswith(base_dir_with_sep)
+    ):
         raise HTTPException(400, "Path escapes compose directory.")
     return resolved
+
+
+def ensure_compose_path(path):
+    base_dir = pathlib.Path(get_compose_base_dir()).resolve()
+    resolved_path = pathlib.Path(resolve_compose_path(path)).resolve()
+    try:
+        resolved_path.relative_to(base_dir)
+    except ValueError as exc:
+        raise HTTPException(400, "Path escapes compose directory.") from exc
+    return resolved_path
 
 
 def resolve_compose_project_path(project_name):
@@ -46,8 +61,9 @@ def _find_yml_files_in_dir(root_dir):
     """
     Find docker compose files inside a validated compose directory.
     """
+    safe_root_dir = ensure_compose_path(root_dir)
     matches = {}
-    for root, _, filenames in os.walk(root_dir, followlinks=False):
+    for root, _, filenames in os.walk(os.fspath(safe_root_dir), followlinks=False):
         for _ in set().union(
             fnmatch.filter(filenames, "compose.yml"),
             fnmatch.filter(filenames, "compose.yaml"),
