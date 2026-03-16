@@ -54,7 +54,9 @@ jobs:
               if (!entry || typeof entry !== "object") {
                 continue;
               }
-              const source = entry.source || entry.url || entry.name || "";
+              const source = String(
+                entry.source || entry.url || entry.name || ""
+              );
               const severity = String(entry.severity || "").toLowerCase();
               if (!severities.has(severity)) {
                 continue;
