@@ -6,7 +6,7 @@ ENV VUE_APP_VERSION=${VUE_APP_VERSION}
 
 WORKDIR /app
 COPY ./frontend/package*.json ./
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 COPY ./frontend/ ./
 RUN npm run build
 
@@ -56,7 +56,7 @@ RUN set -eux; \
     chmod +x /usr/local/bin/docker-compose
 
 RUN pip3 install --upgrade pip setuptools wheel && \
-    pip3 install --use-deprecated=legacy-resolver --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -r requirements.txt
 
 RUN groupadd -r abc && useradd -r -g abc abc
 
