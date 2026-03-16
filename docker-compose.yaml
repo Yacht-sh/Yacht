@@ -1,13 +1,22 @@
-version: '3'
 services:
   yacht:
-    container_name: yacht
+    container_name: yacht-local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VUE_APP_VERSION: local-dev
+    image: yacht:local-dev
     restart: unless-stopped
     ports:
-      - 8000:8000
+      - "8000:8000"
+    environment:
+      SECRET_KEY: local-dev-secret-key-change-me-please
+      ADMIN_EMAIL: admin@example.local
+      ADMIN_PASSWORD: changeme123
+      DISABLE_AUTH: "False"
+      COMPOSE_DIR: /config/compose/
+      THEME: Default
     volumes:
-      - yacht:/config
+      - ./.local/yacht-config:/config
       - /var/run/docker.sock:/var/run/docker.sock
-    image: selfhostedpro/yacht:latest
-volumes:
-  yacht:
