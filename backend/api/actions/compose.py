@@ -35,6 +35,10 @@ def _validated_project_name(project_name):
     normalized = project_name.strip()
     if not normalized or not PROJECT_NAME_PATTERN.fullmatch(normalized):
         raise HTTPException(400, "Invalid project name.")
+    if "/" in normalized or "\\" in normalized:
+        raise HTTPException(400, "Invalid project name.")
+    if normalized in {".", ".."} or normalized != os.path.basename(normalized):
+        raise HTTPException(400, "Invalid project name.")
 
     return normalized
 
@@ -45,11 +49,13 @@ def _validated_project_dir(project_name):
 
 
 def _project_metadata_path(project_name):
-    return _validated_project_dir(project_name) / ".yacht.json"
+    safe_project_name = _validated_project_name(project_name)
+    return pathlib.Path(get_compose_base_dir()) / safe_project_name / ".yacht.json"
 
 
 def _read_project_metadata(project_name):
-    metadata_path = _project_metadata_path(project_name)
+    safe_project_name = _validated_project_name(project_name)
+    metadata_path = _project_metadata_path(safe_project_name)
     if not metadata_path.exists():
         return {}
     with metadata_path.open("r", encoding="utf-8") as metadata_file:
@@ -60,7 +66,8 @@ def _read_project_metadata(project_name):
 
 
 def _write_project_metadata(project_name, metadata):
-    metadata_path = _project_metadata_path(project_name)
+    safe_project_name = _validated_project_name(project_name)
+    metadata_path = _project_metadata_path(safe_project_name)
     with metadata_path.open("w", encoding="utf-8") as metadata_file:
         json.dump(metadata, metadata_file)
 
