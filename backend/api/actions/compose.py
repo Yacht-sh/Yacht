@@ -48,15 +48,29 @@ def _validated_project_dir(project_name):
     return base_dir / _validated_project_name(project_name)
 
 
-def _project_metadata_path(project_name):
+def _existing_project_dir(project_name):
     safe_project_name = _validated_project_name(project_name)
-    return pathlib.Path(get_compose_base_dir()) / safe_project_name / ".yacht.json"
+    base_dir = pathlib.Path(get_compose_base_dir())
+    if not base_dir.exists():
+        return None
+
+    for child in base_dir.iterdir():
+        if child.is_dir() and child.name == safe_project_name:
+            return child
+
+    return None
+
+
+def _project_metadata_path_for_dir(project_dir):
+    return project_dir / ".yacht.json"
 
 
 def _read_project_metadata(project_name):
-    safe_project_name = _validated_project_name(project_name)
-    metadata_path = _project_metadata_path(safe_project_name)
-    if not metadata_path.exists():
+    project_dir = _existing_project_dir(project_name)
+    if project_dir is None:
+        return {}
+    metadata_path = _project_metadata_path_for_dir(project_dir)
+    if not metadata_path.is_file():
         return {}
     with metadata_path.open("r", encoding="utf-8") as metadata_file:
         try:
@@ -65,9 +79,8 @@ def _read_project_metadata(project_name):
             return {}
 
 
-def _write_project_metadata(project_name, metadata):
-    safe_project_name = _validated_project_name(project_name)
-    metadata_path = _project_metadata_path(safe_project_name)
+def _write_project_metadata(project_dir, metadata):
+    metadata_path = _project_metadata_path_for_dir(project_dir)
     with metadata_path.open("w", encoding="utf-8") as metadata_file:
         json.dump(metadata, metadata_file)
 
@@ -374,7 +387,7 @@ def write_compose(compose, db):
             raise HTTPException(422, "Invalid compose content.") from exc
         except OSError as exc:
             raise HTTPException(400, exc.strerror) from exc
-    _write_project_metadata(project_name, {"host_id": host.id})
+    _write_project_metadata(project_dir, {"host_id": host.id})
 
     return get_compose(name=compose.name, db=db, host_id=host.id)
 
