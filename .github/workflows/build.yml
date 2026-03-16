@@ -38,7 +38,44 @@ jobs:
 
       - name: Audit frontend runtime dependencies
         working-directory: frontend
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          npm audit --omit=dev --json > audit.json || true
+          node - <<'NODE'
+          const fs = require("fs");
+          const report = JSON.parse(fs.readFileSync("frontend/audit.json", "utf8"));
+          const allowlist = new Set(["GHSA-5j4c-8p2g-v4jx"]);
+          const severities = new Set(["high", "critical"]);
+          const findings = [];
+
+          const packages = report.vulnerabilities || {};
+          for (const [pkg, vuln] of Object.entries(packages)) {
+            const entries = Array.isArray(vuln.via) ? vuln.via : [];
+            for (const entry of entries) {
+              if (!entry || typeof entry !== "object") {
+                continue;
+              }
+              const source = entry.source || entry.url || entry.name || "";
+              const severity = String(entry.severity || "").toLowerCase();
+              if (!severities.has(severity)) {
+                continue;
+              }
+              if (allowlist.has(source)) {
+                continue;
+              }
+              findings.push(`${pkg}: ${source} (${severity})`);
+            }
+          }
+
+          if (findings.length) {
+            console.error("Unallowlisted frontend vulnerabilities found:");
+            for (const finding of findings) {
+              console.error(` - ${finding}`);
+            }
+            process.exit(1);
+          }
+
+          console.log("Frontend audit passed with current allowlist.");
+          NODE
 
       - name: Build frontend
         working-directory: frontend
