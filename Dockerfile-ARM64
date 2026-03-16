@@ -11,7 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build
 
 # Runtime image
-FROM python:3.11-slim AS deploy-stage
+FROM python:3.14-slim AS deploy-stage
 
 ARG DOCKER_COMPOSE_VERSION=v2.40.3
 
