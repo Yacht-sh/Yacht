@@ -1,5 +1,5 @@
 # Build Vue.js frontend
-FROM node:20-bookworm-slim AS build-stage
+FROM node:25-bookworm-slim AS build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
