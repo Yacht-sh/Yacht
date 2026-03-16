@@ -23,6 +23,10 @@ function createAxiosResponseInterceptor() {
   const interceptor = axios.interceptors.response.use(
     response => response,
     error => {
+      if (!error.response) {
+        return Promise.reject(error);
+      }
+
       if (error.response.status !== 401) {
         return Promise.reject(error);
       }
@@ -34,15 +38,16 @@ function createAxiosResponseInterceptor() {
         .then(() => {
           error.response.config.xsrfCookieName = "csrf_access_token";
           error.response.config.xsrfHeaderName = "X-CSRF-TOKEN";
+          error.response.config.withCredentials = true;
           return axios(error.response.config);
         })
-        .catch(error => {
-          if (error.response.status !== 401) {
-            return Promise.reject(error);
+        .catch(refreshError => {
+          if (!refreshError.response || refreshError.response.status !== 401) {
+            return Promise.reject(refreshError);
           } else {
             store.dispatch("auth/AUTH_LOGOUT");
-            this.router.push("/");
-            return Promise.reject(error);
+            router.push("/");
+            return Promise.reject(refreshError);
           }
         })
         .finally(() => {
