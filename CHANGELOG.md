@@ -161,7 +161,7 @@
 - Theming [\#187](https://github.com/yacht-sh/yacht/pull/187) ([SelfhostedPro](https://github.com/wickedyoda))
 - Theming [\#186](https://github.com/yacht-sh/yacht/pull/186) ([SelfhostedPro](https://github.com/wickedyoda))
 - Theming [\#185](https://github.com/yacht-sh/yacht/pull/185) ([SelfhostedPro](https://github.com/wickedyoda))
-- added digitalocean build [\#184](https://github.com/yacht-sh/yacht/pull/184) ([SelfhostedPro](https://github.com/wickedyoda))
+- added cloud marketplace build [\#184](https://github.com/yacht-sh/yacht/pull/184) ([SelfhostedPro](https://github.com/wickedyoda))
 - Theming [\#183](https://github.com/yacht-sh/yacht/pull/183) ([SelfhostedPro](https://github.com/wickedyoda))
 - \[Snyk\] Security upgrade chart.js from 2.9.3 to 2.9.4 [\#181](https://github.com/yacht-sh/yacht/pull/181) ([snyk-bot](https://github.com/snyk-bot))
 - Alpha 4 Hotfix 1 \(v0.0.4-hf1\) [\#180](https://github.com/yacht-sh/yacht/pull/180) ([SelfhostedPro](https://github.com/wickedyoda))
