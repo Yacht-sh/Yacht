@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "build": "SASS_SILENCE_DEPRECATIONS=legacy-js-api,import,global-builtin,if-function,slash-div vue-cli-service build",
     "lint": "eslint --ext .js,.vue src"
   },
   "dependencies": {
