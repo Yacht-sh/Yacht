@@ -19,7 +19,7 @@ fastapi==0.120.4
 libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
 h11==0.16.0
-httptools==0.6.4
+httptools==0.7.1
 idna==3.7
 makefun==1.15.0
 mysqlclient==2.2.0
