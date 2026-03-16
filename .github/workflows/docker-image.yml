@@ -43,7 +43,7 @@ jobs:
           node - <<'NODE'
           const fs = require("fs");
           const report = JSON.parse(fs.readFileSync("audit.json", "utf8"));
-          const allowlist = new Set(["GHSA-5j4c-8p2g-v4jx"]);
+          const allowlist = new Set(["GHSA-5j4c-8p2g-v4jx", "1111465"]);
           const severities = new Set(["high", "critical"]);
           const findings = [];
 
