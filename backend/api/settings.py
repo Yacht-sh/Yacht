@@ -11,15 +11,35 @@ def compose_dir_check():
     return os.environ.get("COMPOSE_DIR", "/config/compose/")
 
 
+def env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str) -> list[str]:
+    value = os.environ.get(name, "")
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 class Settings(BaseSettings):
     app_name: str = "Yacht API"
-    SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(16))
-    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "pass")
-    ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@yacht.local")
-    ACCESS_TOKEN_EXPIRES = os.environ.get("ACCESS_TOKEN_EXPIRES", 900)
-    REFRESH_TOKEN_EXPIRES = os.environ.get("REFRESH_TOKEN_EXPIRES", 2592000)
-    SAME_SITE_COOKIES = os.environ.get("SAME_SITE_COOKIES", "lax")
-    DISABLE_AUTH = os.environ.get("DISABLE_AUTH", False)
+    SECRET_KEY: str = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+    ADMIN_PASSWORD: str = os.environ.get("ADMIN_PASSWORD", "pass")
+    ADMIN_EMAIL: str = os.environ.get("ADMIN_EMAIL", "admin@yacht.local")
+    ACCESS_TOKEN_EXPIRES: int = int(os.environ.get("ACCESS_TOKEN_EXPIRES", 900))
+    REFRESH_TOKEN_EXPIRES: int = int(
+        os.environ.get("REFRESH_TOKEN_EXPIRES", 2592000)
+    )
+    SAME_SITE_COOKIES: str = os.environ.get("SAME_SITE_COOKIES", "lax")
+    DISABLE_AUTH: bool = env_bool("DISABLE_AUTH", False)
+    SECURE_COOKIES: bool = env_bool("SECURE_COOKIES", False)
+    ENABLE_SECURITY_HEADERS: bool = env_bool("ENABLE_SECURITY_HEADERS", True)
+    ENABLE_HTTPS_REDIRECT: bool = env_bool("ENABLE_HTTPS_REDIRECT", False)
+    EXPOSE_API_DOCS: bool = env_bool("EXPOSE_API_DOCS", False)
+    HSTS_SECONDS: int = int(os.environ.get("HSTS_SECONDS", 31536000))
+    TRUSTED_HOSTS: list[str] = env_list("TRUSTED_HOSTS")
     BASE_TEMPLATE_VARIABLES = [
         {"variable": "!config", "replacement": "/yacht/AppData/Config"},
         {"variable": "!data", "replacement": "/yacht/AppData/Data"},
@@ -40,7 +60,7 @@ class Settings(BaseSettings):
     ]
     if os.environ.get("BASE_TEMPLATE", None):
         BASE_TEMPLATE = os.environ.get("BASE_TEMPLATE")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
         "DATABASE_URL", "sqlite:////config/data.sqlite"
     )
-    COMPOSE_DIR = compose_dir_check()
+    COMPOSE_DIR: str = compose_dir_check()

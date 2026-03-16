@@ -31,7 +31,7 @@ function theme() {
         }
       }
     },
-    DigitalOcean: {
+    Ocean: {
       theme: {
         dark: false,
         themes: {

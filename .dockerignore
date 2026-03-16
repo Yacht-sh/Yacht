@@ -21,6 +21,8 @@ backend/.ftpconfig
 backend/.ftpignore
 
 frontend/node_modules
+.local/
+node_modules
 frontned/.gitignore
 fronend/.gitignore
 
