@@ -1,7 +1,39 @@
+const sass = require("sass");
+
 module.exports = {
   publicPath: "./",
   lintOnSave: false,
   transpileDependencies: ["vuetify"],
+  css: {
+    loaderOptions: {
+      sass: {
+        implementation: sass,
+        sassOptions: {
+          quietDeps: true,
+          silenceDeprecations: [
+            "legacy-js-api",
+            "import",
+            "global-builtin",
+            "if-function",
+            "slash-div",
+          ],
+        },
+      },
+      scss: {
+        implementation: sass,
+        sassOptions: {
+          quietDeps: true,
+          silenceDeprecations: [
+            "legacy-js-api",
+            "import",
+            "global-builtin",
+            "if-function",
+            "slash-div",
+          ],
+        },
+      },
+    },
+  },
 
   devServer: {
     proxy: {

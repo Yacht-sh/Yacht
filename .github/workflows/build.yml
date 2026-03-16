@@ -1,22 +1,128 @@
-name: Build Master
+name: Build Production Image
 
 on:
   push:
-    branches: 
-        - master
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: master-image
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  verify-frontend:
+    name: Verify Frontend
     runs-on: ubuntu-latest
     steps:
-      - name: Get current time
-        uses: 1466587594/get-current-time@v2
-        id: current-time
-        with:
-          format: YYYY-MM-DD--HH
-
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Audit frontend runtime dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  verify-backend:
+    name: Verify Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install backend system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            libffi-dev \
+            libssl-dev \
+            libpq-dev \
+            default-libmysqlclient-dev \
+            libjpeg-dev \
+            zlib1g-dev \
+            libyaml-dev \
+            python3-dev
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --no-cache-dir -r requirements.txt
+          python -m pip install --no-cache-dir bandit pip-audit
+
+      - name: Validate backend dependency graph
+        run: python -m pip check
+
+      - name: Compile backend sources
+        run: python -m compileall backend
+
+      - name: Run Bandit
+        run: bandit -q -r backend/api
+
+      - name: Audit backend dependencies
+        run: pip-audit -r backend/requirements.txt --progress-spinner=off
+
+  publish-production-image:
+    name: Publish Production Image
+    runs-on: ubuntu-latest
+    needs:
+      - verify-frontend
+      - verify-backend
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set timestamp tag
+        id: meta_time
+        run: echo "timestamp=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Normalize image owner
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.OWNER_LC }}/yacht
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.meta_time.outputs.timestamp }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -24,41 +130,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        continue-on-error: true
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Normalize image owner
-        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
-
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64,linux/arm
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           build-args: |
-            VUE_APP_VERSION=v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
-          tags: |
-            ghcr.io/${{ env.OWNER_LC }}/yacht
-            ghcr.io/${{ env.OWNER_LC }}/yacht:latest-${{ steps.current-time.outputs.formattedTime }}
-            ghcr.io/${{ env.OWNER_LC }}/yacht:v0.0.7-alpha-${{ steps.current-time.outputs.formattedTime }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-      -
-        name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+            VUE_APP_VERSION=${{ steps.meta_time.outputs.timestamp }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=master-image
+          cache-to: type=gha,mode=max,scope=master-image
+          provenance: mode=max
+          sbom: true
