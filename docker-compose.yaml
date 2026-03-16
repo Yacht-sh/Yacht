@@ -12,8 +12,8 @@ services:
       - "8000:8000"
     environment:
       SECRET_KEY: local-dev-secret-key-change-me-please
-      ADMIN_EMAIL: admin@yacht.local
-      ADMIN_PASSWORD: pass
+      ADMIN_EMAIL: admin@example.local
+      ADMIN_PASSWORD: changeme123
       DISABLE_AUTH: "False"
       COMPOSE_DIR: /config/compose/
       THEME: Default
