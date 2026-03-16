@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 027
 
 mkdir -p /config/compose /var/www/client_body_temp /var/www/proxy_temp
 

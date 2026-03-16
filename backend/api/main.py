@@ -2,6 +2,9 @@ import os
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from pydantic import BaseModel
@@ -19,15 +22,21 @@ from api.routers import apps, app_settings, compose, hosts, resources, templates
 from api.db.crud.templates import read_template_variables, set_template_variables
 from api.db.crud.hosts import ensure_local_host
 
-app = FastAPI(root_path="/api")
-
 settings = Settings()
+
+docs_enabled = settings.EXPOSE_API_DOCS
+app = FastAPI(
+    root_path="/api",
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
+)
 
 
 class jwtSettings(BaseModel):
     authjwt_secret_key: str = generate_secret_key(db=SessionLocal())
     authjwt_token_location: set = {"headers", "cookies"}
-    authjwt_cookie_secure: bool = False
+    authjwt_cookie_secure: bool = settings.SECURE_COOKIES
     authjwt_cookie_csrf_protect: bool = True
     authjwt_access_token_expires: int = int(settings.ACCESS_TOKEN_EXPIRES)
     authjwt_refresh_token_expires: int = int(settings.REFRESH_TOKEN_EXPIRES)
@@ -61,6 +70,37 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     ):
         status_code = 401
     return JSONResponse(status_code=status_code, content={"detail": exc.message})
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if not settings.ENABLE_SECURITY_HEADERS:
+            return response
+
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Permissions-Policy", "camera=(), geolocation=(), microphone=()"
+        )
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+        if settings.SECURE_COOKIES and settings.HSTS_SECONDS > 0:
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                f"max-age={settings.HSTS_SECONDS}; includeSubDomains",
+            )
+        return response
+
+
+if settings.TRUSTED_HOSTS:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.TRUSTED_HOSTS)
+
+if settings.ENABLE_HTTPS_REDIRECT:
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 app.include_router(users.router, prefix="/auth", tags=["users"])
