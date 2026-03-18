@@ -15,10 +15,20 @@ from api.utils.auth import get_db
 from api.db.models.containers import TemplateVariables
 from api.db.models.settings import SecretKey
 from api.db.database import SessionLocal, engine, Base
+from api.db import models as _db_models
 from api.db.schemas.users import UserCreate
 from api.db.crud.settings import generate_secret_key
 from api.db.crud.users import create_user, get_users
-from api.routers import apps, app_settings, compose, hosts, resources, templates, users
+from api.routers import (
+    agents,
+    apps,
+    app_settings,
+    compose,
+    hosts,
+    resources,
+    templates,
+    users,
+)
 from api.db.crud.templates import read_template_variables, set_template_variables
 from api.db.crud.hosts import ensure_local_host
 
@@ -104,6 +114,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 
 app.include_router(users.router, prefix="/auth", tags=["users"])
+app.include_router(agents.router, prefix="/agents", tags=["agents"])
 app.include_router(hosts.router, prefix="/hosts", tags=["hosts"])
 app.include_router(apps.router, prefix="/apps", tags=["apps"])
 app.include_router(
