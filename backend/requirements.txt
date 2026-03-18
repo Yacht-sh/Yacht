@@ -8,18 +8,15 @@ cffi==2.0.0
 chardet==4.0.0
 click==8.1.6
 cryptography==46.0.5
-databases==0.6.2
-dnspython==2.6.1
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
-email-validator==1.3.1
 # fastapi 0.103.1 was pinned due to compatibility issues
 fastapi==0.120.4
 # maintained fork of fastapi-jwt-auth with PyJWT 2.x support
 libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
 h11==0.16.0
-httptools==0.6.4
+httptools==0.7.1
 idna==3.7
 makefun==1.15.0
 mysqlclient==2.2.0
@@ -46,6 +43,6 @@ uvicorn==0.22.0
 uvloop==0.21.0
 # websocket-client==1.7.2 (wrong version cant deploy)
 websocket-client==1.6.4
-websockets==11.0.2
+websockets==16.0
 wheel==0.46.2
 setuptools==78.1.1
