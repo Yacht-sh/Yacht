@@ -9,6 +9,12 @@ def _annotate_with_host(attrs, host):
     return attrs
 
 
+def _docker_http_exception(exc):
+    status_code = getattr(getattr(exc, "response", None), "status_code", 500)
+    detail = getattr(exc, "explanation", str(exc))
+    return HTTPException(status_code=status_code, detail=detail)
+
+
 ### IMAGES ###
 
 
@@ -23,9 +29,10 @@ def get_images(db, host_id=None):
             try:
                 if container.image.id in image.id:
                     attrs.update({"inUse": True})
-            except Exception as exc:
-                if exc.status_code == 404:
-                    pass
+            except docker.errors.NotFound:
+                continue
+            except docker.errors.APIError as exc:
+                raise _docker_http_exception(exc) from exc
         if attrs.get("inUse") is None:
             attrs.update({"inUse": False})
 
@@ -55,9 +62,10 @@ def get_image(db, image_id, host_id=None):
         try:
             if container.image.id in image.id:
                 attrs.update({"inUse": True})
-        except Exception as exc:
-            if exc.status_code == 404:
-                pass
+        except docker.errors.NotFound:
+            continue
+        except docker.errors.APIError as exc:
+            raise _docker_http_exception(exc) from exc
     if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
     return _annotate_with_host(attrs, host)
@@ -70,10 +78,8 @@ def update_image(db, image_id, host_id=None):
         new_image = dclient.images.get_registry_data(image.tags[0])
         try:
             new_image.pull()
-        except Exception as exc:
-            raise HTTPException(
-                status_code=exc.response.status_code, detail=exc.explanation
-            )
+        except docker.errors.APIError as exc:
+            raise _docker_http_exception(exc) from exc
         return get_image(db, image_id, host_id)
 
 
@@ -82,10 +88,8 @@ def delete_image(db, image_id, host_id=None):
     image = dclient.images.get(image_id)
     try:
         dclient.images.remove(image_id, force=True)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
     return image.attrs
 
 
@@ -104,9 +108,10 @@ def get_volumes(db, host_id=None):
                     for d in container.attrs["Mounts"]
                 ):
                     attrs.update({"inUse": True})
-            except Exception as exc:
-                if exc.status_code == 404:
-                    pass
+            except docker.errors.NotFound:
+                continue
+            except docker.errors.APIError as exc:
+                raise _docker_http_exception(exc) from exc
         if attrs.get("inUse") is None:
             attrs.update({"inUse": False})
         volume_list.append(_annotate_with_host(attrs, host))
@@ -117,10 +122,8 @@ def write_volume(db, volume_name, host_id=None):
     _, dclient = get_docker_client(db, host_id)
     try:
         dclient.volumes.create(name=volume_name)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
     return get_volumes(db, host_id)
 
 
@@ -136,13 +139,10 @@ def get_volume(db, volume_id, host_id=None):
                 for d in container.attrs["Mounts"]
             ):
                 attrs.update({"inUse": True})
-        except Exception as exc:
-            if exc.status_code == 404:
-                pass
-            else:
-                raise HTTPException(
-                    status_code=exc.response.status_code, detail=exc.explanation
-                )
+        except docker.errors.NotFound:
+            continue
+        except docker.errors.APIError as exc:
+            raise _docker_http_exception(exc) from exc
     if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
     return _annotate_with_host(attrs, host)
@@ -153,10 +153,8 @@ def delete_volume(db, volume_id, host_id=None):
     volume = dclient.volumes.get(volume_id)
     try:
         volume.remove(force=True)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
     return volume.attrs
 
 
@@ -176,13 +174,10 @@ def get_networks(db, host_id=None):
                 ):
                     attrs.update({"inUse": True})
                     break
-            except Exception as exc:
-                if exc.status_code == 404:
-                    pass
-                else:
-                    raise HTTPException(
-                        status_code=exc.response.status_code, detail=exc.explanation
-                    )
+            except docker.errors.NotFound:
+                continue
+            except docker.errors.APIError as exc:
+                raise _docker_http_exception(exc) from exc
         if attrs:
             if attrs.get("inUse") is None:
                 attrs.update({"inUse": False})
@@ -230,10 +225,8 @@ def write_network(db, network_form, host_id=None):
             enable_ipv6=network_form.ipv6_enabled,
             attachable=network_form.attachable,
         )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
 
     return get_networks(db, host_id)
 
@@ -244,10 +237,8 @@ def get_network(db, network_id, host_id=None):
 
     try:
         network = dclient.networks.get(network_id)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
 
     attrs = network.attrs
     for container in containers:
@@ -258,13 +249,10 @@ def get_network(db, network_id, host_id=None):
             ):
                 attrs.update({"inUse": True})
                 break
-        except Exception as exc:
-            if exc.status_code == 404:
-                pass
-            else:
-                raise HTTPException(
-                    status_code=exc.response.status_code, detail=exc.explanation
-                )
+        except docker.errors.NotFound:
+            continue
+        except docker.errors.APIError as exc:
+            raise _docker_http_exception(exc) from exc
     if attrs.get("inUse") is None:
         attrs.update({"inUse": False})
     return _annotate_with_host(attrs, host)
@@ -275,10 +263,8 @@ def delete_network(db, network_id, host_id=None):
     network = dclient.networks.get(network_id)
     try:
         network.remove()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, detail=exc.explanation
-        )
+    except docker.errors.APIError as exc:
+        raise _docker_http_exception(exc) from exc
 
     return network.attrs
 

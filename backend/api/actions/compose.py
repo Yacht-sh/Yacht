@@ -408,14 +408,8 @@ def delete_compose(project_name, db, host_id=None):
 
     if not project_dir.exists():
         raise HTTPException(404, "Project directory not found.")
-    elif not compose_file.exists():
+    if not compose_file.is_file():
         raise HTTPException(404, "Project docker-compose.yml not found.")
-    else:
-        try:
-            with compose_file.open("r", encoding="utf-8"):
-                pass
-        except OSError as exc:
-            raise HTTPException(400, exc.strerror) from exc
     try:
         shutil.rmtree(project_dir)
     except OSError as exc:

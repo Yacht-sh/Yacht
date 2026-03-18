@@ -78,7 +78,6 @@ The fork diverges from SelfhostedPro’s 2021 code starting at `v0.0.7-alpha-hf-
   - Installs Docker Compose 2.x
   - Upgrades `pip`
   - Runs backend with `python3 app.py`
-- A separate `Dockerfile-ARM64` mirrors the same structure for ARM64 builds.
 
 ### 📚 README + Docs Updates
 

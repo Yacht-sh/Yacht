@@ -69,7 +69,7 @@ def get_running_apps(db, host_id=None):
 Checks repo digest for app and compares it to image
 digest to see if there's an update available.
 
-TODO: This has issues if there's more than one repo digest
+Limitation: this assumes a single repo digest for the image.
 """
 
 

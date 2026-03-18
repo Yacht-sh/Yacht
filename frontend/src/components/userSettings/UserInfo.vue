@@ -148,9 +148,7 @@ export default {
             }
           }
         })
-        .catch(() => {
-          //pass
-        });
+        .catch(() => {});
     },
     copykey() {
       var copytext = document.getElementById("newapikey");

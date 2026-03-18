@@ -137,9 +137,7 @@ async def startup(db: Session = Depends(get_db)):
         + str(type(settings.DISABLE_AUTH))
         + ")"
     )
-    if users_exist:
-        pass
-    else:
+    if not users_exist:
         print("No Users. Creating the default user.")
         user = UserCreate(
             username=settings.ADMIN_EMAIL, password=settings.ADMIN_PASSWORD
@@ -154,9 +152,7 @@ async def startup(db: Session = Depends(get_db)):
         template_variables_exist = read_template_variables(template_db)
     finally:
         template_db.close()
-    if template_variables_exist:
-        pass
-    else:
+    if not template_variables_exist:
         print("No Variables yet!")
         t_vars = settings.BASE_TEMPLATE_VARIABLES
         t_var_list = []
