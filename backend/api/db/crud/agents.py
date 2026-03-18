@@ -114,5 +114,34 @@ def heartbeat_agent(db: Session, payload, agent_token: str | None):
     return host, agent
 
 
+def sync_agent_inventory(db: Session, payload, agent_token: str | None):
+    agent = authenticate_agent(db, agent_token)
+    host = db.query(Host).filter(Host.id == agent.host_id).first()
+    if host is None:
+        raise HTTPException(status_code=404, detail="Agent host not found.")
+
+    updated_at = datetime.utcnow()
+    host.is_active = True
+    host.last_seen = updated_at
+    agent.last_heartbeat = updated_at
+    agent.inventory_updated_at = updated_at
+    agent.containers = payload.containers
+    agent.images = payload.images
+    agent.volumes = payload.volumes
+    agent.networks = payload.networks
+    db.add(host)
+    db.add(agent)
+    db.commit()
+    db.refresh(agent)
+    return host, agent
+
+
+def get_agent_for_host(db: Session, host_id: int):
+    agent = db.query(Agent).filter(Agent.host_id == host_id).first()
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent inventory not found.")
+    return agent
+
+
 def list_agents(db: Session):
     return db.query(Agent, Host).join(Host, Host.id == Agent.host_id).all()

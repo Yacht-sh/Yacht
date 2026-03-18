@@ -27,14 +27,15 @@ def _http_exception_from_docker_error(exc, default_status=502):
     return HTTPException(status_code=default_status, detail=detail)
 
 
-def resolve_host(db, host_id=None):
+def resolve_host(db, host_id=None, update_last_seen=True):
     host = get_default_host(db) if host_id is None else get_host(db, host_id)
     if not host.is_active:
         raise HTTPException(status_code=400, detail="Host is inactive.")
-    host.last_seen = datetime.utcnow()
-    db.add(host)
-    db.commit()
-    db.refresh(host)
+    if update_last_seen:
+        host.last_seen = datetime.utcnow()
+        db.add(host)
+        db.commit()
+        db.refresh(host)
     return host
 
 

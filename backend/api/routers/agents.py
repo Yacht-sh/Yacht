@@ -6,10 +6,17 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.orm import Session
 
 from api.auth.auth import auth_check
-from api.db.crud.agents import heartbeat_agent, list_agents, register_agent
+from api.db.crud.agents import (
+    heartbeat_agent,
+    list_agents,
+    register_agent,
+    sync_agent_inventory,
+)
 from api.db.schemas.agents import (
     AgentHeartbeat,
     AgentHeartbeatResponse,
+    AgentInventorySync,
+    AgentInventorySyncResponse,
     AgentRead,
     AgentRegister,
     AgentRegisterResponse,
@@ -33,6 +40,7 @@ def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
             docker_version=agent.docker_version,
             capabilities=agent.capabilities or {},
             last_heartbeat=agent.last_heartbeat,
+            inventory_updated_at=agent.inventory_updated_at,
             created_at=agent.created_at,
             updated_at=agent.updated_at,
         )
@@ -72,4 +80,17 @@ def heartbeat(
         host_id=host.id,
         heartbeat_interval=30,
         server_time=datetime.utcnow(),
+    )
+
+
+@router.post("/sync", response_model=AgentInventorySyncResponse)
+def sync(
+    payload: AgentInventorySync,
+    db: Session = Depends(get_db),
+    x_yacht_agent_token: Optional[str] = Header(default=None),
+):
+    host, agent = sync_agent_inventory(db, payload, x_yacht_agent_token)
+    return AgentInventorySyncResponse(
+        host_id=host.id,
+        inventory_updated_at=agent.inventory_updated_at,
     )

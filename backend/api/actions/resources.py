@@ -1,7 +1,8 @@
 import docker
 from fastapi import HTTPException
 
-from api.utils.docker_hosts import get_docker_client, host_metadata
+from api.db.crud.agents import get_agent_for_host
+from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
 
 
 def _annotate_with_host(attrs, host):
@@ -15,10 +16,22 @@ def _docker_http_exception(exc):
     return HTTPException(status_code=status_code, detail=detail)
 
 
+def _cached_agent_resource_items(db, host_id, attribute):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type != "agent":
+        return None, host
+    agent = get_agent_for_host(db, host.id)
+    items = getattr(agent, attribute) or []
+    return [_annotate_with_host(dict(item), host) for item in items], host
+
+
 ### IMAGES ###
 
 
 def get_images(db, host_id=None):
+    images, _host = _cached_agent_resource_items(db, host_id, "images")
+    if images is not None:
+        return images
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     images = dclient.images.list()
@@ -41,6 +54,11 @@ def get_images(db, host_id=None):
 
 
 def write_image(db, image_tag, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Image pulls are not implemented for agent hosts."
+        )
     delim = ":"
     _, dclient = get_docker_client(db, host_id)
     repo, tag = None, image_tag
@@ -54,6 +72,12 @@ def write_image(db, image_tag, host_id=None):
 
 
 def get_image(db, image_id, host_id=None):
+    images, _host = _cached_agent_resource_items(db, host_id, "images")
+    if images is not None:
+        for image in images:
+            if image.get("Id") == image_id or image.get("id") == image_id:
+                return image
+        raise HTTPException(status_code=404, detail="Image not found.")
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     image = dclient.images.get(image_id)
@@ -72,6 +96,11 @@ def get_image(db, image_id, host_id=None):
 
 
 def update_image(db, image_id, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Image updates are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     if type(image_id) == str:
         image = dclient.images.get(image_id)
@@ -84,6 +113,11 @@ def update_image(db, image_id, host_id=None):
 
 
 def delete_image(db, image_id, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Image deletes are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     image = dclient.images.get(image_id)
     try:
@@ -95,6 +129,9 @@ def delete_image(db, image_id, host_id=None):
 
 ### Volumes ###
 def get_volumes(db, host_id=None):
+    volumes, _host = _cached_agent_resource_items(db, host_id, "volumes")
+    if volumes is not None:
+        return volumes
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     volumes = dclient.volumes.list()
@@ -119,6 +156,11 @@ def get_volumes(db, host_id=None):
 
 
 def write_volume(db, volume_name, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Volume creates are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     try:
         dclient.volumes.create(name=volume_name)
@@ -128,6 +170,12 @@ def write_volume(db, volume_name, host_id=None):
 
 
 def get_volume(db, volume_id, host_id=None):
+    volumes, _host = _cached_agent_resource_items(db, host_id, "volumes")
+    if volumes is not None:
+        for volume in volumes:
+            if volume.get("Name") == volume_id or volume.get("name") == volume_id:
+                return volume
+        raise HTTPException(status_code=404, detail="Volume not found.")
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     volume = dclient.volumes.get(volume_id)
@@ -149,6 +197,11 @@ def get_volume(db, volume_id, host_id=None):
 
 
 def delete_volume(db, volume_id, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Volume deletes are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     volume = dclient.volumes.get(volume_id)
     try:
@@ -160,6 +213,9 @@ def delete_volume(db, volume_id, host_id=None):
 
 ### Networks ###
 def get_networks(db, host_id=None):
+    networks, _host = _cached_agent_resource_items(db, host_id, "networks")
+    if networks is not None:
+        return networks
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
     networks = dclient.networks.list()
@@ -190,6 +246,11 @@ def get_networks(db, host_id=None):
 
 
 def write_network(db, network_form, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Network creates are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
 
     if network_form.ipv4subnet:
@@ -232,6 +293,12 @@ def write_network(db, network_form, host_id=None):
 
 
 def get_network(db, network_id, host_id=None):
+    networks, _host = _cached_agent_resource_items(db, host_id, "networks")
+    if networks is not None:
+        for network in networks:
+            if network.get("Id") == network_id or network.get("Name") == network_id:
+                return network
+        raise HTTPException(status_code=404, detail="Network not found.")
     host, dclient = get_docker_client(db, host_id)
     containers = dclient.containers.list(all=True)
 
@@ -259,6 +326,11 @@ def get_network(db, network_id, host_id=None):
 
 
 def delete_network(db, network_id, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Network deletes are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     network = dclient.networks.get(network_id)
     try:
@@ -270,6 +342,11 @@ def delete_network(db, network_id, host_id=None):
 
 
 def prune_resources(db, resource, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Prune is not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     action = getattr(dclient, resource)
     if resource == "images":

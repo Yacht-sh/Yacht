@@ -17,6 +17,11 @@ class Agent(Base):
     docker_version = Column(String(64), nullable=True)
     capabilities = Column(JSON, nullable=True)
     last_heartbeat = Column(DateTime, nullable=True)
+    inventory_updated_at = Column(DateTime, nullable=True)
+    containers = Column(JSON, nullable=True)
+    images = Column(JSON, nullable=True)
+    volumes = Column(JSON, nullable=True)
+    networks = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(
         DateTime,

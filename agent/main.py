@@ -92,6 +92,61 @@ def _heartbeat_payload(client):
     }
 
 
+def _safe_container_record(container):
+    attrs = dict(container.attrs)
+    attrs["name"] = container.name
+    attrs["ports"] = container.ports
+    attrs["short_id"] = container.short_id
+    return attrs
+
+
+def _safe_image_record(image, containers):
+    attrs = dict(image.attrs)
+    attrs["inUse"] = any(
+        getattr(container.image, "id", None) and container.image.id in image.id
+        for container in containers
+    )
+    return attrs
+
+
+def _safe_volume_record(volume, containers):
+    attrs = dict(volume.attrs)
+    mountpoint = attrs.get("Mountpoint")
+    attrs["inUse"] = any(
+        any(mount.get("Source") == mountpoint for mount in container.attrs.get("Mounts", []))
+        for container in containers
+    )
+    return attrs
+
+
+def _safe_network_record(network, containers):
+    attrs = dict(network.attrs)
+    attrs["inUse"] = any(
+        any(
+            details.get("NetworkID") == attrs.get("Id")
+            for details in container.attrs.get("NetworkSettings", {}).get("Networks", {}).values()
+        )
+        for container in containers
+    )
+    labels = attrs.get("Labels") or {}
+    if labels.get("com.docker.compose.project"):
+        attrs["Project"] = labels["com.docker.compose.project"]
+    return attrs
+
+
+def _inventory_payload(client):
+    containers = client.containers.list(all=True)
+    images = client.images.list()
+    volumes = client.volumes.list()
+    networks = client.networks.list()
+    return {
+        "containers": [_safe_container_record(container) for container in containers],
+        "images": [_safe_image_record(image, containers) for image in images],
+        "volumes": [_safe_volume_record(volume, containers) for volume in volumes],
+        "networks": [_safe_network_record(network, containers) for network in networks],
+    }
+
+
 def _session():
     session = requests.Session()
     session.trust_env = False
@@ -146,6 +201,23 @@ def heartbeat(session, client, state):
     return int(data.get("heartbeat_interval", HEARTBEAT_INTERVAL))
 
 
+def sync_inventory(session, client, state):
+    agent_token = state.get("agent_token")
+    if not agent_token:
+        raise RuntimeError("Agent token is missing from state.")
+
+    response = session.post(
+        f"{_normalize_server_url()}/agents/sync",
+        json=_inventory_payload(client),
+        headers={"X-Yacht-Agent-Token": agent_token},
+        timeout=30,
+        verify=VERIFY_SSL,
+    )
+    response.raise_for_status()
+    data = response.json()
+    logger.info("Inventory sync accepted for host %s", data.get("host_id"))
+
+
 def main():
     state = _load_state()
     while True:
@@ -157,6 +229,7 @@ def main():
                     interval = register_agent(session, client, state)
                 else:
                     interval = heartbeat(session, client, state)
+                sync_inventory(session, client, state)
             finally:
                 session.close()
                 client.close()

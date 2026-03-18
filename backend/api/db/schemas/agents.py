@@ -33,6 +33,18 @@ class AgentHeartbeatResponse(BaseModel):
     server_time: datetime
 
 
+class AgentInventorySync(BaseModel):
+    containers: list[dict] = Field(default_factory=list)
+    images: list[dict] = Field(default_factory=list)
+    volumes: list[dict] = Field(default_factory=list)
+    networks: list[dict] = Field(default_factory=list)
+
+
+class AgentInventorySyncResponse(BaseModel):
+    host_id: int
+    inventory_updated_at: datetime
+
+
 class AgentRead(BaseModel):
     id: int
     host_id: int
@@ -42,6 +54,6 @@ class AgentRead(BaseModel):
     docker_version: Optional[str]
     capabilities: dict[str, bool]
     last_heartbeat: Optional[datetime]
+    inventory_updated_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
-

@@ -26,6 +26,7 @@ from api.utils.docker_hosts import (
     host_metadata,
     resolve_host,
 )
+from api.db.crud.agents import get_agent_for_host
 from api.utils.templates import conv2dict
 
 import yaml
@@ -51,7 +52,19 @@ def _annotate_with_host(attrs, host):
     return attrs
 
 
+def _cached_agent_apps(db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type != "agent":
+        return None, host
+    agent = get_agent_for_host(db, host.id)
+    apps = [_annotate_with_host(dict(app), host) for app in (agent.containers or [])]
+    return apps, host
+
+
 def get_running_apps(db, host_id=None):
+    apps, _host = _cached_agent_apps(db, host_id)
+    if apps is not None:
+        return [app for app in apps if app.get("State", {}).get("Running")]
     apps_list = []
     host, dclient = get_docker_client(db, host_id)
     apps = dclient.containers.list()
@@ -74,6 +87,11 @@ Limitation: this assumes a single repo digest for the image.
 
 
 def check_app_update(app_name, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Update checks are not implemented for agent hosts."
+        )
     host, dclient = get_docker_client(db, host_id)
     try:
         app = dclient.containers.get(app_name)
@@ -98,6 +116,9 @@ properties that aren't in the app attributes
 
 
 def get_apps(db, host_id=None):
+    apps, _host = _cached_agent_apps(db, host_id)
+    if apps is not None:
+        return apps
     apps_list = []
     try:
         host, dclient = get_docker_client(db, host_id)
@@ -128,6 +149,12 @@ attributes
 
 
 def get_app(app_name, db, host_id=None):
+    apps, _host = _cached_agent_apps(db, host_id)
+    if apps is not None:
+        for app in apps:
+            if app.get("name") == app_name:
+                return app
+        raise HTTPException(status_code=404, detail="Container not found.")
     host, dclient = get_docker_client(db, host_id)
     try:
         app = dclient.containers.get(app_name)
@@ -150,6 +177,11 @@ Get processes running in an app.
 
 
 def get_app_processes(app_name, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Process inspection is not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
     if app.status == "running":
@@ -166,6 +198,11 @@ via a websocket in routers so they're realtime)
 
 
 def get_app_logs(app_name, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Logs are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
     if app.status == "running":
@@ -284,6 +321,11 @@ def launch_app(
     _id,
     host_id=None,
 ):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Deploy is not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     if edit == True:
         try:
@@ -341,6 +383,11 @@ Runs an app action (ie. docker stop, docker start, etc.)
 
 
 def app_action(app_name, action, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Container actions are not implemented for agent hosts."
+        )
     err = None
     _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
@@ -370,6 +417,11 @@ and --cleanup flags and targets a container by name
 
 
 def app_update(app_name, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Container updates are not implemented for agent hosts."
+        )
     _, dclient = get_docker_client(db, host_id)
     try:
         old = dclient.containers.get(app_name)
@@ -482,6 +534,12 @@ def check_self_update():
 
 
 def generate_support_bundle(app_name, db, host_id=None):
+    host = resolve_host(db, host_id, update_last_seen=False)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501,
+            detail="Support bundles are not implemented for agent hosts.",
+        )
     _, dclient = get_docker_client(db, host_id)
     if dclient.containers.get(app_name):
         app = dclient.containers.get(app_name)
@@ -508,6 +566,10 @@ def generate_support_bundle(app_name, db, host_id=None):
 
 async def log_generator(request, app_name, db, host_id=None):
     host = resolve_host(db, host_id)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Logs are not implemented for agent hosts."
+        )
     while True:
         async with aiodocker.Docker(url=docker_base_url(host)) as docker:
             container: DockerContainer = await docker.containers.get(app_name)
@@ -525,6 +587,10 @@ async def log_generator(request, app_name, db, host_id=None):
 async def stat_generator(request, app_name, db, host_id=None):
     prev_stats = None
     host = resolve_host(db, host_id)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Stats are not implemented for agent hosts."
+        )
     while True:
         async with aiodocker.Docker(url=docker_base_url(host)) as adocker:
             container: DockerContainer = await adocker.containers.get(app_name)
@@ -551,6 +617,10 @@ async def stat_generator(request, app_name, db, host_id=None):
 
 async def all_stat_generator(request, db, host_id=None):
     host = resolve_host(db, host_id)
+    if host.connection_type == "agent":
+        raise HTTPException(
+            status_code=501, detail="Stats are not implemented for agent hosts."
+        )
     async with aiodocker.Docker(url=docker_base_url(host)) as docker:
         containers = []
         _containers = await docker.containers.list()
