@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -43,6 +43,24 @@ class AgentInventorySync(BaseModel):
 class AgentInventorySyncResponse(BaseModel):
     host_id: int
     inventory_updated_at: datetime
+
+
+class AgentJobRead(BaseModel):
+    job_id: str
+    job_type: str
+    payload: dict
+
+
+class AgentJobResult(BaseModel):
+    status: Literal["succeeded", "failed"]
+    result: dict = Field(default_factory=dict)
+    error: Optional[str] = None
+
+
+class AgentJobResultResponse(BaseModel):
+    job_id: str
+    status: str
+    updated_at: datetime
 
 
 class AgentRead(BaseModel):

@@ -6,6 +6,11 @@
 
 Yacht is a container management UI with a focus on templates and 1-click deployments.
 
+The current `develop` branch supports two host management modes:
+
+- direct Docker API hosts added manually in the UI
+- agent-managed hosts where a `yacht-agent` container connects back to the main Yacht server
+
 ## Project Status
 
 This application had gone unmaintained for a while. The current work on `develop` is focused on bringing dependencies, workflows, and security posture back up to date.
@@ -29,6 +34,53 @@ Check out the getting started guide if this is the first time you've used Yacht:
 **We can also be found on Linode**
 
 [`<img src="https://www.linode.com/wp-content/uploads/2021/01/Linode-Logo-Black.svg" width="200" >`](https://www.linode.com/marketplace/apps/selfhostedpro/yacht/)
+
+## Agent Architecture
+
+The main Yacht container is the control plane. It hosts the web UI, API, auth, and database.
+
+Remote Docker hosts can run a separate `yacht-agent` container that:
+
+- mounts the local Docker socket
+- registers with the main Yacht server using a shared enrollment token
+- keeps host inventory in sync
+- executes container actions locally after the server queues a job
+
+This avoids exposing the remote Docker API directly when you do not want to.
+
+Current agent-backed write support on `develop` covers container actions:
+
+- `start`
+- `stop`
+- `restart`
+- `kill`
+- `remove`
+
+## Agent Deployment
+
+Set `AGENT_ENROLLMENT_TOKEN` on the main Yacht server first. The agent must use the same token through `YACHT_AGENT_ENROLLMENT_TOKEN`.
+
+Example agent deployment:
+
+```yaml
+services:
+  yacht-agent:
+    image: ghcr.io/yacht-sh/yacht-agent:dev-latest
+    container_name: yacht-agent
+    restart: unless-stopped
+    environment:
+      YACHT_SERVER_URL: https://yacht.example.com
+      YACHT_AGENT_ENROLLMENT_TOKEN: replace-with-shared-enrollment-token
+      YACHT_AGENT_NAME: edge-docker-01
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - yacht-agent-config:/config
+
+volumes:
+  yacht-agent-config:
+```
+
+Agent-managed hosts self-register. You do not create them manually from the Hosts form.
 
 ## Features So Far
 
@@ -79,6 +131,7 @@ You can utilize the following environment variables in Yacht. None of them are m
 | PGID | Set groupid that the container will run as. |
 | SECRET_KEY | Setting this to a random string ensures you won't be logged out in between reboots of Yacht. |
 | ADMIN_EMAIL | This sets the email for the default Yacht user. |
+| AGENT_ENROLLMENT_TOKEN | Shared secret used by `yacht-agent` containers when they first register with the main Yacht server. |
 | DISABLE_AUTH | This disables authentication on the backend of Yacht. It's not recommended unless you're using something like Authelia to manage authentication. |
 | DATABASE_URL | If you want to have Yacht use a database like SQL instead of the built in sqlite, you can put that info here in the following format: `postgresql://user:password@postgresserver/db` |
 | COMPOSE_DIR | This is the path inside the container which contains your folders that have docker compose projects. (`compose` tag only) |

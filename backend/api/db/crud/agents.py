@@ -1,11 +1,13 @@
 import hashlib
 import secrets
+import time
 from datetime import datetime
 from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from api.db.models.agent_jobs import AgentJob
 from api.db.models.agents import Agent
 from api.db.models.hosts import Host
 from api.settings import Settings
@@ -114,6 +116,16 @@ def heartbeat_agent(db: Session, payload, agent_token: str | None):
     return host, agent
 
 
+def _apply_inventory_to_agent(agent: Agent, inventory: dict | None):
+    if inventory is None:
+        return
+    agent.inventory_updated_at = datetime.utcnow()
+    agent.containers = inventory.get("containers", [])
+    agent.images = inventory.get("images", [])
+    agent.volumes = inventory.get("volumes", [])
+    agent.networks = inventory.get("networks", [])
+
+
 def sync_agent_inventory(db: Session, payload, agent_token: str | None):
     agent = authenticate_agent(db, agent_token)
     host = db.query(Host).filter(Host.id == agent.host_id).first()
@@ -141,6 +153,100 @@ def get_agent_for_host(db: Session, host_id: int):
     if agent is None:
         raise HTTPException(status_code=404, detail="Agent inventory not found.")
     return agent
+
+
+def queue_agent_job(db: Session, host_id: int, job_type: str, payload: dict):
+    agent = get_agent_for_host(db, host_id)
+    job = AgentJob(
+        agent_id=agent.id,
+        job_key=str(uuid4()),
+        job_type=job_type,
+        status="pending",
+        payload=payload,
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def claim_next_agent_job(db: Session, agent_token: str | None):
+    agent = authenticate_agent(db, agent_token)
+    host = db.query(Host).filter(Host.id == agent.host_id).first()
+    if host is None:
+        raise HTTPException(status_code=404, detail="Agent host not found.")
+
+    now = datetime.utcnow()
+    stale_after = 60
+    jobs = (
+        db.query(AgentJob)
+        .filter(AgentJob.agent_id == agent.id)
+        .filter(AgentJob.status.in_(("pending", "running")))
+        .order_by(AgentJob.created_at.asc())
+        .all()
+    )
+    for job in jobs:
+        if job.status == "running" and job.assigned_at is not None:
+            if (now - job.assigned_at).total_seconds() < stale_after:
+                continue
+        job.status = "running"
+        job.assigned_at = now
+        agent.last_heartbeat = now
+        host.is_active = True
+        host.last_seen = now
+        db.add(job)
+        db.add(agent)
+        db.add(host)
+        db.commit()
+        db.refresh(job)
+        return host, agent, job
+    return host, agent, None
+
+
+def complete_agent_job(
+    db: Session, job_key: str, payload, agent_token: str | None
+):
+    agent = authenticate_agent(db, agent_token)
+    job = (
+        db.query(AgentJob)
+        .filter(AgentJob.agent_id == agent.id, AgentJob.job_key == job_key)
+        .first()
+    )
+    if job is None:
+        raise HTTPException(status_code=404, detail="Agent job not found.")
+
+    host = db.query(Host).filter(Host.id == agent.host_id).first()
+    if host is None:
+        raise HTTPException(status_code=404, detail="Agent host not found.")
+
+    now = datetime.utcnow()
+    job.status = payload.status
+    job.result = payload.result or {}
+    job.error = payload.error
+    job.completed_at = now
+    agent.last_heartbeat = now
+    host.is_active = True
+    host.last_seen = now
+    _apply_inventory_to_agent(agent, job.result.get("inventory"))
+    db.add(job)
+    db.add(agent)
+    db.add(host)
+    db.commit()
+    db.refresh(job)
+    return host, agent, job
+
+
+def wait_for_agent_job(db: Session, job_id: int, timeout_seconds: int = 20):
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        db.expire_all()
+        job = db.query(AgentJob).filter(AgentJob.id == job_id).first()
+        if job is None:
+            raise HTTPException(status_code=404, detail="Agent job not found.")
+        if job.status in {"succeeded", "failed"}:
+            return job
+        time.sleep(1)
+    raise HTTPException(status_code=504, detail="Timed out waiting for agent job.")
 
 
 def list_agents(db: Session):

@@ -11,12 +11,14 @@ import requests
 
 STATE_PATH = Path(os.environ.get("YACHT_AGENT_STATE", "/config/agent-state.json"))
 HEARTBEAT_INTERVAL = int(os.environ.get("YACHT_AGENT_HEARTBEAT_INTERVAL", "30"))
+JOB_POLL_INTERVAL = int(os.environ.get("YACHT_AGENT_JOB_POLL_INTERVAL", "5"))
 VERIFY_SSL = os.environ.get("YACHT_AGENT_VERIFY_SSL", "true").strip().lower() in {
     "1",
     "true",
     "yes",
     "on",
 }
+SUPPORTED_CONTAINER_ACTIONS = {"start", "stop", "restart", "remove", "kill"}
 
 logging.basicConfig(
     level=os.environ.get("YACHT_AGENT_LOG_LEVEL", "INFO"),
@@ -49,6 +51,13 @@ def _save_state(state: dict):
     STATE_PATH.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
 
 
+def _clear_registration(state: dict):
+    state.pop("agent_token", None)
+    state.pop("agent_id", None)
+    state.pop("host_id", None)
+    _save_state(state)
+
+
 def _agent_name() -> str:
     return os.environ.get("YACHT_AGENT_NAME", socket.gethostname())
 
@@ -65,7 +74,7 @@ def _capabilities() -> dict[str, bool]:
         "images": True,
         "volumes": True,
         "networks": True,
-        "compose": True,
+        "compose": False,
     }
 
 
@@ -113,7 +122,10 @@ def _safe_volume_record(volume, containers):
     attrs = dict(volume.attrs)
     mountpoint = attrs.get("Mountpoint")
     attrs["inUse"] = any(
-        any(mount.get("Source") == mountpoint for mount in container.attrs.get("Mounts", []))
+        any(
+            mount.get("Source") == mountpoint
+            for mount in container.attrs.get("Mounts", [])
+        )
         for container in containers
     )
     return attrs
@@ -124,7 +136,9 @@ def _safe_network_record(network, containers):
     attrs["inUse"] = any(
         any(
             details.get("NetworkID") == attrs.get("Id")
-            for details in container.attrs.get("NetworkSettings", {}).get("Networks", {}).values()
+            for details in container.attrs.get("NetworkSettings", {})
+            .get("Networks", {})
+            .values()
         )
         for container in containers
     )
@@ -153,6 +167,13 @@ def _session():
     return session
 
 
+def _agent_headers(state: dict) -> dict:
+    agent_token = state.get("agent_token")
+    if not agent_token:
+        raise RuntimeError("Agent token is missing from state.")
+    return {"X-Yacht-Agent-Token": agent_token}
+
+
 def register_agent(session, client, state):
     enroll_token = os.environ.get("YACHT_AGENT_ENROLLMENT_TOKEN", "").strip()
     if not enroll_token:
@@ -176,23 +197,16 @@ def register_agent(session, client, state):
 
 
 def heartbeat(session, client, state):
-    agent_token = state.get("agent_token")
-    if not agent_token:
-        raise RuntimeError("Agent token is missing from state.")
-
     response = session.post(
         f"{_normalize_server_url()}/agents/heartbeat",
         json=_heartbeat_payload(client),
-        headers={"X-Yacht-Agent-Token": agent_token},
+        headers=_agent_headers(state),
         timeout=15,
         verify=VERIFY_SSL,
     )
     if response.status_code in {401, 403, 404}:
         logger.warning("Agent token rejected by server, re-registering.")
-        state.pop("agent_token", None)
-        state.pop("agent_id", None)
-        state.pop("host_id", None)
-        _save_state(state)
+        _clear_registration(state)
         return register_agent(session, client, state)
 
     response.raise_for_status()
@@ -202,48 +216,154 @@ def heartbeat(session, client, state):
 
 
 def sync_inventory(session, client, state):
-    agent_token = state.get("agent_token")
-    if not agent_token:
-        raise RuntimeError("Agent token is missing from state.")
-
     response = session.post(
         f"{_normalize_server_url()}/agents/sync",
         json=_inventory_payload(client),
-        headers={"X-Yacht-Agent-Token": agent_token},
+        headers=_agent_headers(state),
         timeout=30,
         verify=VERIFY_SSL,
     )
+    if response.status_code in {401, 403, 404}:
+        logger.warning("Inventory sync rejected by server, re-registering.")
+        _clear_registration(state)
+        return False
+
     response.raise_for_status()
     data = response.json()
     logger.info("Inventory sync accepted for host %s", data.get("host_id"))
+    return True
+
+
+def fetch_next_job(session, state):
+    response = session.get(
+        f"{_normalize_server_url()}/agents/jobs/next",
+        headers=_agent_headers(state),
+        timeout=15,
+        verify=VERIFY_SSL,
+    )
+    if response.status_code in {401, 403, 404}:
+        logger.warning("Job polling rejected by server, re-registering.")
+        _clear_registration(state)
+        return None
+    response.raise_for_status()
+    return response.json()
+
+
+def submit_job_result(session, state, job_id, status, result=None, error=None):
+    response = session.post(
+        f"{_normalize_server_url()}/agents/jobs/{job_id}/result",
+        json={
+            "status": status,
+            "result": result or {},
+            "error": error,
+        },
+        headers=_agent_headers(state),
+        timeout=30,
+        verify=VERIFY_SSL,
+    )
+    if response.status_code in {401, 403, 404}:
+        logger.warning("Job result rejected by server, re-registering.")
+        _clear_registration(state)
+        return
+    response.raise_for_status()
+
+
+def _run_container_action(client, payload):
+    container_name = (payload or {}).get("container")
+    action = (payload or {}).get("action")
+    if not container_name:
+        raise ValueError("Container action job is missing a container name.")
+    if action not in SUPPORTED_CONTAINER_ACTIONS:
+        raise ValueError(f"Unsupported container action: {action}")
+
+    container = client.containers.get(container_name)
+    container_action = getattr(container, action, None)
+    if container_action is None:
+        raise ValueError(f"Container action is not available: {action}")
+
+    if action == "remove":
+        container_action(force=True)
+    else:
+        container_action()
+
+    return {
+        "container": container_name,
+        "action": action,
+        "inventory": _inventory_payload(client),
+    }
+
+
+def execute_job(session, client, state, job):
+    if not job:
+        return False
+
+    job_id = job.get("job_id")
+    job_type = job.get("job_type")
+    payload = job.get("payload") or {}
+    if not job_id or not job_type:
+        logger.warning("Ignoring malformed job payload: %s", job)
+        return False
+
+    try:
+        if job_type == "container_action":
+            result = _run_container_action(client, payload)
+        else:
+            raise ValueError(f"Unsupported job type: {job_type}")
+    except docker.errors.DockerException as exc:
+        logger.error("Agent job %s failed: %s", job_id, exc)
+        submit_job_result(session, state, job_id, "failed", error=str(exc))
+        return True
+    except Exception as exc:
+        logger.error("Agent job %s failed: %s", job_id, exc)
+        submit_job_result(session, state, job_id, "failed", error=str(exc))
+        return True
+
+    submit_job_result(session, state, job_id, "succeeded", result=result)
+    logger.info("Completed agent job %s (%s)", job_id, job_type)
+    return True
 
 
 def main():
     state = _load_state()
+    next_heartbeat_at = 0.0
+    next_sync_at = 0.0
+    current_heartbeat_interval = HEARTBEAT_INTERVAL
+
     while True:
+        now = time.monotonic()
         try:
             client = _docker_client()
             session = _session()
             try:
                 if not state.get("agent_token"):
-                    interval = register_agent(session, client, state)
+                    current_heartbeat_interval = register_agent(session, client, state)
+                    sync_inventory(session, client, state)
+                    now = time.monotonic()
+                    next_heartbeat_at = now + current_heartbeat_interval
+                    next_sync_at = now + current_heartbeat_interval
                 else:
-                    interval = heartbeat(session, client, state)
-                sync_inventory(session, client, state)
+                    if now >= next_heartbeat_at:
+                        current_heartbeat_interval = heartbeat(session, client, state)
+                        next_heartbeat_at = now + current_heartbeat_interval
+                    if now >= next_sync_at:
+                        if sync_inventory(session, client, state):
+                            next_sync_at = now + current_heartbeat_interval
+
+                if state.get("agent_token"):
+                    job = fetch_next_job(session, state)
+                    if job:
+                        execute_job(session, client, state, job)
             finally:
                 session.close()
                 client.close()
         except requests.RequestException as exc:
             logger.error("HTTP error talking to Yacht: %s", exc)
-            interval = HEARTBEAT_INTERVAL
         except docker.errors.DockerException as exc:
             logger.error("Local Docker error: %s", exc)
-            interval = HEARTBEAT_INTERVAL
         except Exception as exc:
             logger.exception("Agent loop failed: %s", exc)
-            interval = HEARTBEAT_INTERVAL
 
-        time.sleep(max(interval, 5))
+        time.sleep(max(JOB_POLL_INTERVAL, 2))
 
 
 if __name__ == "__main__":

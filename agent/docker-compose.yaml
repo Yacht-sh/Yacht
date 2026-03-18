@@ -9,6 +9,7 @@ services:
       YACHT_AGENT_NAME: remote-docker-host
       YACHT_AGENT_VERIFY_SSL: "true"
       YACHT_AGENT_HEARTBEAT_INTERVAL: "30"
+      YACHT_AGENT_JOB_POLL_INTERVAL: "5"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - yacht-agent-config:/config

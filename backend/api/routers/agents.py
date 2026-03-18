@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from api.auth.auth import auth_check
 from api.db.crud.agents import (
+    claim_next_agent_job,
+    complete_agent_job,
     heartbeat_agent,
     list_agents,
     register_agent,
@@ -15,6 +17,9 @@ from api.db.crud.agents import (
 from api.db.schemas.agents import (
     AgentHeartbeat,
     AgentHeartbeatResponse,
+    AgentJobRead,
+    AgentJobResult,
+    AgentJobResultResponse,
     AgentInventorySync,
     AgentInventorySyncResponse,
     AgentRead,
@@ -80,6 +85,32 @@ def heartbeat(
         host_id=host.id,
         heartbeat_interval=30,
         server_time=datetime.utcnow(),
+    )
+
+
+@router.get("/jobs/next", response_model=Optional[AgentJobRead])
+def next_job(
+    db: Session = Depends(get_db),
+    x_yacht_agent_token: Optional[str] = Header(default=None),
+):
+    _host, _agent, job = claim_next_agent_job(db, x_yacht_agent_token)
+    if job is None:
+        return None
+    return AgentJobRead(job_id=job.job_key, job_type=job.job_type, payload=job.payload)
+
+
+@router.post("/jobs/{job_id}/result", response_model=AgentJobResultResponse)
+def complete_job(
+    job_id: str,
+    payload: AgentJobResult,
+    db: Session = Depends(get_db),
+    x_yacht_agent_token: Optional[str] = Header(default=None),
+):
+    _host, _agent, job = complete_agent_job(db, job_id, payload, x_yacht_agent_token)
+    return AgentJobResultResponse(
+        job_id=job.job_key,
+        status=job.status,
+        updated_at=job.updated_at,
     )
 
 

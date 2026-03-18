@@ -4,7 +4,9 @@
       <v-toolbar-title>Hosts</v-toolbar-title>
     </v-toolbar>
     <v-card-text>
-      Add remote Docker API hosts and switch between them from the top bar.
+      Add remote Docker API hosts here and switch between them from the top bar.
+      Agent-managed hosts register themselves automatically from remote Docker
+      servers running `yacht-agent`.
     </v-card-text>
     <v-form class="mx-4 mb-4" @submit.prevent="submit">
       <v-text-field
@@ -44,6 +46,13 @@
         <v-chip x-small :color="item.is_active ? 'primary' : 'error'">
           {{ item.is_active ? "Active" : "Inactive" }}
         </v-chip>
+      </template>
+      <template v-slot:item.docker_host="{ item }">
+        <span v-if="item.connection_type === 'docker_api'">
+          {{ item.docker_host }}
+        </span>
+        <span v-else-if="item.connection_type === 'agent'"> Agent-managed </span>
+        <span v-else> Local socket </span>
       </template>
     </v-data-table>
   </v-card>

@@ -26,7 +26,11 @@ from api.utils.docker_hosts import (
     host_metadata,
     resolve_host,
 )
-from api.db.crud.agents import get_agent_for_host
+from api.db.crud.agents import (
+    get_agent_for_host,
+    queue_agent_job,
+    wait_for_agent_job,
+)
 from api.utils.templates import conv2dict
 
 import yaml
@@ -385,9 +389,26 @@ Runs an app action (ie. docker stop, docker start, etc.)
 def app_action(app_name, action, db, host_id=None):
     host = resolve_host(db, host_id, update_last_seen=False)
     if host.connection_type == "agent":
-        raise HTTPException(
-            status_code=501, detail="Container actions are not implemented for agent hosts."
+        allowed_actions = {"start", "stop", "restart", "remove", "kill"}
+        if action not in allowed_actions:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported container action for agent hosts: {action}",
+            )
+        job = queue_agent_job(
+            db,
+            host.id,
+            "container_action",
+            {"container": app_name, "action": action},
         )
+        completed_job = wait_for_agent_job(db, job.id)
+        if completed_job.status == "failed":
+            raise HTTPException(
+                status_code=502,
+                detail=completed_job.error or "Agent job failed.",
+            )
+        db.expire_all()
+        return get_apps(db=db, host_id=host_id)
     err = None
     _, dclient = get_docker_client(db, host_id)
     app = dclient.containers.get(app_name)
