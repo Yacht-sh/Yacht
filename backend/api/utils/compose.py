@@ -1,12 +1,17 @@
 from ..settings import Settings
 from fastapi import HTTPException
 import os
-import fnmatch
 import pathlib
 import re
 
 settings = Settings()
 PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+COMPOSE_FILE_PATTERNS = (
+    "compose.yml",
+    "compose.yaml",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+)
 
 
 def get_compose_base_dir():
@@ -33,6 +38,12 @@ def _ensure_within_compose_base(path, must_exist=False):
     return resolved
 
 
+def _resolve_compose_descendant(*path_parts, must_exist=False):
+    base_dir = get_compose_base_path().resolve()
+    candidate = base_dir.joinpath(*path_parts)
+    return _ensure_within_compose_base(candidate, must_exist=must_exist)
+
+
 def _validated_project_name(project_name):
     if not isinstance(project_name, str):
         raise HTTPException(400, "Invalid project name.")
@@ -53,18 +64,13 @@ def resolve_compose_project_path(project_name):
     Resolve a compose project directory from a project name.
     """
     validated_name = _validated_project_name(project_name)
-    project_dir = _ensure_within_compose_base(
-        get_compose_base_path() / validated_name
-    )
+    project_dir = _resolve_compose_descendant(validated_name)
     return os.fspath(project_dir)
 
 
 def resolve_compose_project_dir(project_name, must_exist=False):
     validated_name = _validated_project_name(project_name)
-    return _ensure_within_compose_base(
-        get_compose_base_path() / validated_name,
-        must_exist=must_exist,
-    )
+    return _resolve_compose_descendant(validated_name, must_exist=must_exist)
 
 
 def resolve_compose_file(project_name, filename="docker-compose.yml", must_exist=False):
@@ -76,7 +82,7 @@ def resolve_compose_file(project_name, filename="docker-compose.yml", must_exist
     return compose_file
 
 
-def _collect_yml_files(root_dir):
+def _compose_file_matches(root_dir):
     """
     Find docker compose files inside a validated compose directory.
     """
@@ -85,16 +91,9 @@ def _collect_yml_files(root_dir):
         return {}
 
     matches = {}
-    for root, _, filenames in os.walk(os.fspath(safe_root), followlinks=False):
-        for _ in set().union(
-            fnmatch.filter(filenames, "compose.yml"),
-            fnmatch.filter(filenames, "compose.yaml"),
-            fnmatch.filter(filenames, "docker-compose.yml"),
-            fnmatch.filter(filenames, "docker-compose.yaml"),
-        ):
-            candidate = _ensure_within_compose_base(
-                pathlib.Path(root) / _, must_exist=True
-            )
+    for pattern in COMPOSE_FILE_PATTERNS:
+        for candidate in safe_root.rglob(pattern):
+            candidate = _ensure_within_compose_base(candidate, must_exist=True)
             key = candidate.parent.name
             matches[key] = os.fspath(candidate)
     return matches
@@ -104,14 +103,15 @@ def find_yml_files():
     """
     Find docker compose files under the compose base directory.
     """
-    return _collect_yml_files(get_compose_base_path())
+    return _compose_file_matches(get_compose_base_path())
 
 
 def find_project_yml_files(project_name):
     """
     Find docker compose files for a single validated project.
     """
-    return _collect_yml_files(get_compose_base_path() / _validated_project_name(project_name))
+    project_dir = resolve_compose_project_dir(project_name)
+    return _compose_file_matches(project_dir)
 
 
 def resolve_project_compose_manifest(project_name):
