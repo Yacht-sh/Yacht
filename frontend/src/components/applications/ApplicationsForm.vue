@@ -13,7 +13,7 @@
     </h1>
     <v-card v-if="notes" color="blue-grey darken-2" class="mb-2">
       <v-card-title>Note:</v-card-title>
-      <v-card-text v-html="notes"></v-card-text>
+      <v-card-text class="notes-text">{{ notes }}</v-card-text>
     </v-card>
     <v-stepper class="foreground" v-model="deployStep" alt-labels non-linear>
       <v-fade-transition>
@@ -1088,5 +1088,11 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.notes-text {
+  white-space: pre-wrap;
+}
+</style>
 
 <style lang="css" scoped></style>
