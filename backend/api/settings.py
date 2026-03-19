@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     EXPOSE_API_DOCS: bool = env_bool("EXPOSE_API_DOCS", False)
     HSTS_SECONDS: int = int(os.environ.get("HSTS_SECONDS", 31536000))
     TRUSTED_HOSTS: list[str] = env_list("TRUSTED_HOSTS")
+    AGENT_ENROLLMENT_TOKEN: str = os.environ.get("AGENT_ENROLLMENT_TOKEN", "")
     BASE_TEMPLATE_VARIABLES = [
         {"variable": "!config", "replacement": "/yacht/AppData/Config"},
         {"variable": "!data", "replacement": "/yacht/AppData/Data"},

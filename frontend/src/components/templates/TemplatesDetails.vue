@@ -109,7 +109,7 @@
         <v-card-text class="pt-2">
           {{ selectedApp.description }}
           <h4 v-if="selectedApp.notes" class="pt-2">Notes:</h4>
-          <p v-if="selectedApp.notes" v-html="selectedApp.notes" />
+          <p v-if="selectedApp.notes" class="notes-text">{{ selectedApp.notes }}</p>
           <v-card tile>
             <v-card-title class="subheading primary font-weight-bold">
               General
@@ -387,6 +387,12 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.notes-text {
+  white-space: pre-wrap;
+}
+</style>
 
 <style lang="css">
 /* .templateDetailsContainer{

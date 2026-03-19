@@ -217,10 +217,13 @@ def conv_restart2data(data):
 
 
 async def calculate_cpu_percent(d):
-    try:
-        cpu_count = len(d["cpu_stats"]["cpu_usage"]["percpu_usage"])
-    except KeyError as exc:
-        pass
+    cpu_count = d.get("cpu_stats", {}).get("online_cpus")
+    if not cpu_count:
+        cpu_count = len(
+            d.get("cpu_stats", {}).get("cpu_usage", {}).get("percpu_usage", [])
+        )
+    if not cpu_count:
+        cpu_count = 1
     cpu_percent = 0.0
     cpu_delta = float(d["cpu_stats"]["cpu_usage"]["total_usage"]) - float(
         d["precpu_stats"]["cpu_usage"]["total_usage"]

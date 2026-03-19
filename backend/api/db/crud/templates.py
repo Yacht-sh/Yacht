@@ -197,9 +197,10 @@ def add_template(db: Session, template: models.Template):
         db.add(_template)
         db.commit()
     except IntegrityError as err:
-        # TODO raises IntegrityError on duplicates (uniqueness)
-        #       status
         db.rollback()
+        raise HTTPException(
+            status_code=409, detail="A template with this URL already exists."
+        ) from err
 
     return get_template(db=db, url=template.url)
 
