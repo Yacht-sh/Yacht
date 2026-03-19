@@ -16,7 +16,7 @@ libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
 h11==0.16.0
 httptools==0.7.1
-idna==3.7
+idna==3.11
 makefun==1.15.0
 # optional relational database drivers
 mysqlclient==2.2.0
