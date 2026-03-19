@@ -1,4 +1,4 @@
-aiodocker==0.21.0
+aiodocker==0.26.0
 aiostream==0.4.4
 alembic==1.10.4
 bcrypt==4.0.1
