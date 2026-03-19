@@ -12,9 +12,13 @@ updates:
     ignore:
       - dependency-name: "vue"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "vuetify"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "vue-router"
         update-types: ["version-update:semver-major"]
       - dependency-name: "vee-validate"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "sass-loader"
         update-types: ["version-update:semver-major"]
