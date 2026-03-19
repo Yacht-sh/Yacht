@@ -8,7 +8,6 @@ except Exception:
 import os
 import json
 import yaml
-import pathlib
 import shutil
 import docker
 import io
@@ -20,7 +19,9 @@ from api.settings import Settings
 from api.utils.compose import (
     find_project_yml_files,
     find_yml_files,
-    get_compose_base_dir,
+    resolve_compose_file,
+    resolve_compose_project_dir,
+    resolve_project_compose_manifest,
 )
 from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
 
@@ -44,20 +45,13 @@ def _validated_project_name(project_name):
 
 
 def _validated_project_dir(project_name):
-    base_dir = pathlib.Path(get_compose_base_dir())
-    return base_dir / _validated_project_name(project_name)
+    return resolve_compose_project_dir(project_name)
 
 
 def _existing_project_dir(project_name):
-    safe_project_name = _validated_project_name(project_name)
-    base_dir = pathlib.Path(get_compose_base_dir())
-    if not base_dir.exists():
-        return None
-
-    for child in base_dir.iterdir():
-        if child.is_dir() and child.name == safe_project_name:
-            return child
-
+    project_dir = resolve_compose_project_dir(project_name)
+    if project_dir.exists() and project_dir.is_dir():
+        return project_dir
     return None
 
 
@@ -313,7 +307,6 @@ project.
 
 def get_compose(name, db, host_id=None):
     try:
-        project_dir = _validated_project_dir(name)
         project_host = _project_host(name, db)
         if host_id is not None and project_host.id != host_id:
             raise HTTPException(404, "Project not found on selected host.")
@@ -368,14 +361,14 @@ the content of compose.content to it.
 
 def write_compose(compose, db):
     project_name = _validated_project_name(compose.name)
-    project_dir = _validated_project_dir(project_name)
+    project_dir = resolve_compose_project_dir(project_name)
     host = resolve_host(db, compose.host_id)
     if not project_dir.exists():
         try:
             project_dir.mkdir(parents=True)
         except OSError as exc:
             raise HTTPException(400, exc.strerror) from exc
-    compose_file = project_dir / "docker-compose.yml"
+    compose_file = resolve_compose_file(project_name)
     with compose_file.open("w", encoding="utf-8") as f:
         try:
             f.write(compose.content)
@@ -400,22 +393,14 @@ it exists. This also deletes all files in the folder.
 
 def delete_compose(project_name, db, host_id=None):
     project_name = _validated_project_name(project_name)
-    project_dir = _validated_project_dir(project_name)
-    compose_file = project_dir / "docker-compose.yml"
+    project_dir = resolve_compose_project_dir(project_name, must_exist=True)
+    compose_file = resolve_project_compose_manifest(project_name)
     project_host = _project_host(project_name, db)
     if host_id is not None and project_host.id != host_id:
         raise HTTPException(404, "Project not found on selected host.")
 
-    if not project_dir.exists():
-        raise HTTPException(404, "Project directory not found.")
-    elif not compose_file.exists():
-        raise HTTPException(404, "Project docker-compose.yml not found.")
-    else:
-        try:
-            with compose_file.open("r", encoding="utf-8"):
-                pass
-        except OSError as exc:
-            raise HTTPException(400, exc.strerror) from exc
+    if not compose_file.is_file():
+        raise HTTPException(404, "Project compose manifest not found.")
     try:
         shutil.rmtree(project_dir)
     except OSError as exc:
@@ -425,63 +410,55 @@ def delete_compose(project_name, db, host_id=None):
 
 def generate_support_bundle(project_name, db, host_id=None):
     project_name = _validated_project_name(project_name)
-    project_dir = _validated_project_dir(project_name)
-    files = find_project_yml_files(project_name)
-    if project_name in files:
-        project_host = _project_host(project_name, db)
-        if host_id is not None and project_host.id != host_id:
-            raise HTTPException(404, "Project not found on selected host.")
-        _, dclient = get_docker_client(db, project_host.id)
-        stream = io.BytesIO()
-        compose_path = pathlib.Path(files[project_name])
-        with zipfile.ZipFile(stream, "w") as zf, compose_path.open(
-            "r", encoding="utf-8"
-        ) as fp:
-            compose = yaml.load(fp, Loader=yaml.SafeLoader)
-            # print(compose)
-            # print(compose.get("services"))
-            for _service in compose.get("services"):
-                print()
-                if len(compose.get("services").keys()) < 2:
-                    try:
-                        if compose.get("services")[_service].get("container_name"):
-                            service = dclient.containers.get(
-                                compose.get("services")[_service].get("container_name")
-                            )
-                        else:
-                            service = dclient.containers.get(_service)
-                    except docker.errors.NotFound as exc:
-                        raise HTTPException(
-                            exc.status_code,
-                            detail="container " + _service + " not found",
+    compose_path = resolve_project_compose_manifest(project_name)
+    project_host = _project_host(project_name, db)
+    if host_id is not None and project_host.id != host_id:
+        raise HTTPException(404, "Project not found on selected host.")
+    _, dclient = get_docker_client(db, project_host.id)
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as zf, compose_path.open(
+        "r", encoding="utf-8"
+    ) as fp:
+        compose = yaml.load(fp, Loader=yaml.SafeLoader)
+        for _service in compose.get("services"):
+            print()
+            if len(compose.get("services").keys()) < 2:
+                try:
+                    if compose.get("services")[_service].get("container_name"):
+                        service = dclient.containers.get(
+                            compose.get("services")[_service].get("container_name")
                         )
-                else:
-                    try:
-                        if compose.get("services")[_service].get("container_name"):
-                            service = dclient.containers.get(
-                                compose.get("services")[_service].get("container_name")
-                            )
-                        else:
-                            service = dclient.containers.get(
-                                project_name.lower() + "_" + _service + "_1"
-                            )
-                    except docker.errors.NotFound as exc:
-                        raise HTTPException(
-                            exc.status_code,
-                            detail="container " + _service + " not found",
+                    else:
+                        service = dclient.containers.get(_service)
+                except docker.errors.NotFound as exc:
+                    raise HTTPException(
+                        exc.status_code,
+                        detail="container " + _service + " not found",
+                    )
+            else:
+                try:
+                    if compose.get("services")[_service].get("container_name"):
+                        service = dclient.containers.get(
+                            compose.get("services")[_service].get("container_name")
                         )
-                service_log = service.logs()
-                zf.writestr(f"{_service}.log", service_log)
-            fp.seek(0)
-            # It is possible that ".write(...)" has better memory management here.
-            zf.writestr("docker-compose.yml", fp.read())
-        stream.seek(0)
-        return StreamingResponse(
-            stream,
-            media_type="application/x-zip-compressed",
-            headers={
-                "Content-Disposition": f"attachment;filename={project_name}_bundle.zip"
-            },
-        )
-    else:
-        raise HTTPException(404, f"Project {project_name} not found.")
+                    else:
+                        service = dclient.containers.get(
+                            project_name.lower() + "_" + _service + "_1"
+                        )
+                except docker.errors.NotFound as exc:
+                    raise HTTPException(
+                        exc.status_code,
+                        detail="container " + _service + " not found",
+                    )
+            service_log = service.logs()
+            zf.writestr(f"{_service}.log", service_log)
+        fp.seek(0)
+        zf.writestr("docker-compose.yml", fp.read())
+    stream.seek(0)
+    return StreamingResponse(
+        stream,
+        media_type="application/x-zip-compressed",
+        headers={
+            "Content-Disposition": f"attachment;filename={project_name}_bundle.zip"
+        },
+    )
