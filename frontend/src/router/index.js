@@ -1,61 +1,66 @@
-// Base
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Home from "../views/Home.vue";
-
-// Templates
-import Templates from "../views/Templates.vue";
-import TemplatesShow from "../components/templates/TemplatesDetails.vue";
-import TemplatesForm from "../components/templates/TemplatesForm.vue";
-import TemplatesList from "../components/templates/TemplatesList.vue";
-
-// Apps
-import Applications from "../views/Applications.vue";
-import AppContent from "../components/applications/ApplicationDetailsComponents/AppContent.vue";
-import AppProcesses from "../components/applications/ApplicationDetailsComponents/AppProcesses.vue";
-import AppLogs from "../components/applications/ApplicationDetailsComponents/AppLogs.vue";
-import AppStats from "../components/applications/ApplicationDetailsComponents/AppStats.vue";
-import ApplicationDetails from "../components/applications/ApplicationDetails.vue";
-import ApplicationsList from "../components/applications/ApplicationsList.vue";
-import ApplicationsForm from "../components/applications/ApplicationsForm.vue";
-import ApplicationDeployFromTemplate from "../components/applications/ApplicationDeployFromTemplate.vue";
-
-// Project
-import Project from "../views/Project.vue";
-import ProjectList from "../components/compose/ProjectList.vue";
-import ProjectDetails from "../components/compose/ProjectDetails.vue";
-import ProjectEditor from "../components/compose/ProjectEditor.vue";
-
-// Resources
-import Resources from "../views/Resources.vue";
-// Images
-import ImageList from "../components/resources/images/ImageList.vue";
-import ImageDetails from "../components/resources/images/ImageDetails.vue";
-// Volumes
-import VolumeList from "../components/resources/volumes/VolumeList.vue";
-import VolumeDetails from "../components/resources/volumes/VolumeDetails.vue";
-// Networks
-import NetworkList from "../components/resources/networks/NetworkList.vue";
-import NetworkDetails from "../components/resources/networks/NetworkDetails.vue";
-import NetworkForm from "../components/resources/networks/NetworkForm.vue";
-
-// User Settings
-import UserSettings from "../views/UserSettings.vue";
-import ChangePasswordForm from "../components/userSettings/ChangePasswordForm.vue";
-import UserInfo from "../components/userSettings/UserInfo.vue";
-
-// Server Settings
-// import ServerSettingsNav from "../components/serverSettings/ServerSettingsNav.vue"
-import ServerSettings from "../views/ServerSettings.vue";
-import ServerInfo from "../components/serverSettings/ServerInfo.vue";
-import ServerVariables from "../components/serverSettings/ServerVariables.vue";
-import Prune from "../components/serverSettings/Prune.vue";
-import ServerUpdate from "../components/serverSettings/ServerUpdate.vue";
-import Theme from "../components/serverSettings/Theme.vue";
-// import { component } from "vue/types/umd";
-// import { component } from "vue/types/umd";
 
 Vue.use(VueRouter);
+
+const Home = () => import("../views/Home.vue");
+
+const Templates = () => import("../views/Templates.vue");
+const TemplatesShow = () => import("../components/templates/TemplatesDetails.vue");
+const TemplatesForm = () => import("../components/templates/TemplatesForm.vue");
+const TemplatesList = () => import("../components/templates/TemplatesList.vue");
+
+const Applications = () => import("../views/Applications.vue");
+const AppContent = () =>
+  import("../components/applications/ApplicationDetailsComponents/AppContent.vue");
+const AppProcesses = () =>
+  import("../components/applications/ApplicationDetailsComponents/AppProcesses.vue");
+const AppLogs = () =>
+  import("../components/applications/ApplicationDetailsComponents/AppLogs.vue");
+const AppStats = () =>
+  import("../components/applications/ApplicationDetailsComponents/AppStats.vue");
+const ApplicationDetails = () =>
+  import("../components/applications/ApplicationDetails.vue");
+const ApplicationsList = () =>
+  import("../components/applications/ApplicationsList.vue");
+const ApplicationsForm = () =>
+  import("../components/applications/ApplicationsForm.vue");
+const ApplicationDeployFromTemplate = () =>
+  import("../components/applications/ApplicationDeployFromTemplate.vue");
+
+const Project = () => import("../views/Project.vue");
+const ProjectList = () => import("../components/compose/ProjectList.vue");
+const ProjectDetails = () => import("../components/compose/ProjectDetails.vue");
+const ProjectEditor = () => import("../components/compose/ProjectEditor.vue");
+
+const Resources = () => import("../views/Resources.vue");
+const ImageList = () => import("../components/resources/images/ImageList.vue");
+const ImageDetails = () =>
+  import("../components/resources/images/ImageDetails.vue");
+const VolumeList = () =>
+  import("../components/resources/volumes/VolumeList.vue");
+const VolumeDetails = () =>
+  import("../components/resources/volumes/VolumeDetails.vue");
+const NetworkList = () =>
+  import("../components/resources/networks/NetworkList.vue");
+const NetworkDetails = () =>
+  import("../components/resources/networks/NetworkDetails.vue");
+const NetworkForm = () =>
+  import("../components/resources/networks/NetworkForm.vue");
+
+const UserSettings = () => import("../views/UserSettings.vue");
+const ChangePasswordForm = () =>
+  import("../components/userSettings/ChangePasswordForm.vue");
+const UserInfo = () => import("../components/userSettings/UserInfo.vue");
+
+const ServerSettings = () => import("../views/ServerSettings.vue");
+const ServerInfo = () => import("../components/serverSettings/ServerInfo.vue");
+const ServerVariables = () =>
+  import("../components/serverSettings/ServerVariables.vue");
+const Prune = () => import("../components/serverSettings/Prune.vue");
+const ServerUpdate = () =>
+  import("../components/serverSettings/ServerUpdate.vue");
+const Theme = () => import("../components/serverSettings/Theme.vue");
 
 const routes = [
   {
@@ -65,23 +70,22 @@ const routes = [
   },
   {
     path: "/templates",
-    // name: "Templates",
     component: Templates,
     children: [
       {
         path: "",
         name: "View Templates",
-        component: TemplatesList // perhaps rename to TemplatesIndex
+        component: TemplatesList
       },
       {
         path: "new",
         name: "New Template",
-        component: TemplatesForm // perhaps rename to TemplatesCreate
+        component: TemplatesForm
       },
       {
         path: ":templateId",
         name: "Template Details",
-        component: TemplatesShow // perhaps rename to TemplateDetails
+        component: TemplatesShow
       }
     ]
   },
