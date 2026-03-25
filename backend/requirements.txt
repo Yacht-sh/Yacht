@@ -29,7 +29,7 @@ pydantic==1.10.22
 PyJWT==2.12.1
 python-multipart==0.0.22
 PyYAML==6.0.1
-requests==2.32.4
+requests==2.33.0
 six==1.16.0
 sh==1.14.3
 # SQLAlchemy==2.0.20
