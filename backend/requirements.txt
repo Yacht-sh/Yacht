@@ -23,7 +23,7 @@ mysqlclient==2.2.0
 passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.7
-pycparser==2.21
+pycparser==3.0
 pydantic==1.10.22
 # PyJWT==2.7.0
 PyJWT==2.12.1
