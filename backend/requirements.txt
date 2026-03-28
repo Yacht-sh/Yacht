@@ -9,8 +9,8 @@ click==8.1.6
 cryptography==46.0.5
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
-# fastapi 0.103.1 was pinned due to compatibility issues
-fastapi==0.135.1
+# fastapi is pinned for pydantic v1 compatibility
+fastapi==0.120.4
 # maintained fork of fastapi-jwt-auth with PyJWT 2.x support
 libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
