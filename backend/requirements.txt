@@ -1,29 +1,29 @@
 aiodocker==0.21.0
-aiostream==0.4.4
+aiostream==0.7.1
 alembic==1.10.4
 bcrypt==4.0.1
 certifi==2024.7.4
 cffi==2.0.0
 chardet==4.0.0
 click==8.1.6
-cryptography==46.0.5
+cryptography==46.0.6
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
-# fastapi 0.103.1 was pinned due to compatibility issues
+# fastapi is pinned for pydantic v1 compatibility
 fastapi==0.120.4
 # maintained fork of fastapi-jwt-auth with PyJWT 2.x support
 libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
 h11==0.16.0
 httptools==0.7.1
-idna==3.7
-makefun==1.15.0
+idna==3.11
+makefun==1.16.0
 # optional relational database drivers
 mysqlclient==2.2.0
 passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.7
-pycparser==2.21
+pycparser==3.0
 pydantic==1.10.22
 # PyJWT==2.7.0
 PyJWT==2.12.1
