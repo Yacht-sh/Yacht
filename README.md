@@ -20,6 +20,7 @@ The rewrite effort is being explored in [Yacht-sh/yacht-nuxt](https://github.com
 The installation docs currently live at [dev.yacht.sh](https://dev.yacht.sh).
 
 Repo-local documentation now lives in [`docs/`](./docs/README.md).
+Operational wiki pages for the current `develop` branch live in [`wiki/`](./wiki/Home.md).
 
 ## Demo
 
