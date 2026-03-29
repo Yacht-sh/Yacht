@@ -13,6 +13,8 @@ This directory contains the repo-local documentation for the current Yacht imple
 - [CI/CD and Image Publishing](./ci-cd.md)
 - [Security Guide](./security.md)
 
+The repo also keeps a lightweight operational wiki snapshot in [`../wiki/`](../wiki/Home.md) for current branch workflow, dependency compatibility, verification, and GHCR publishing notes.
+
 ## Scope
 
 These docs describe the code that exists in this repository today, including:
