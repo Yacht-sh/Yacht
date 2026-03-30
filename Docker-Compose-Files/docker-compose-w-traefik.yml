@@ -1,16 +1,13 @@
-### Use are your own risk, has not been tested by staff. 
-
----
-version: "3"
+### Example only. Validate labels, entrypoints, and certificate resolver values for your Traefik setup.
 
 networks:
   traefik_network:
-    external:
-      name: web
+    name: web
+    external: true
 
 services:
   yacht:
-    image: yacht-sh/yacht:main
+    image: ghcr.io/yacht-sh/yacht:latest
     restart: unless-stopped
     networks:
       - traefik_network

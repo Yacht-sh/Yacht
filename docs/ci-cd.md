@@ -12,20 +12,21 @@ Agent image:
 
 - `ghcr.io/<owner>/yacht-agent`
 
-## Branch Workflows
+## Workflow
 
-### Develop
+Current image publishing uses:
 
-Workflow:
-
-- `.github/workflows/docker-image.yml`
+- `.github/workflows/build.yml`
 
 Trigger:
 
 - push to `develop`
+- push to `master`
 - manual dispatch
 
-Verification stages:
+## Verification Stages
+
+Before publishing, the workflow verifies:
 
 - frontend install
 - frontend lint
@@ -40,38 +41,21 @@ Verification stages:
 - agent Bandit scan
 - agent pip-audit
 
-Publish stages:
+## Publish Tags
+
+On `develop`:
 
 - `yacht:dev-latest`
-- `yacht:<YYYYMMDD-HHMMSS>`
+- `yacht:dev-<YYYYMMDD-HHMMSS>`
 - `yacht-agent:dev-latest`
-- `yacht-agent:<YYYYMMDD-HHMMSS>`
+- `yacht-agent:dev-<YYYYMMDD-HHMMSS>`
 
-### Master
-
-Workflow:
-
-- `.github/workflows/build.yml`
-
-Trigger:
-
-- push to `master`
-- manual dispatch
-
-Publish stages:
+On `master`:
 
 - `yacht:latest`
 - `yacht:<YYYYMMDD-HHMMSS>`
 - `yacht-agent:latest`
 - `yacht-agent:<YYYYMMDD-HHMMSS>`
-
-## Manual Builds
-
-Workflow:
-
-- `.github/workflows/manual-build.yml`
-
-This workflow can build either image from a provided ref or tag and publish it to GHCR.
 
 ## Supply Chain Metadata
 
@@ -82,8 +66,9 @@ Current Docker build jobs enable:
 
 ## Authentication
 
-The workflows publish with:
+The workflows log in to GHCR with:
 
-- `GITHUB_TOKEN`
+- `GHCR_USERNAME` and `GHCR_TOKEN` when provided
+- otherwise `github.actor` and `GITHUB_TOKEN`
 
 There is no Docker Hub publishing path in the current repo configuration.
