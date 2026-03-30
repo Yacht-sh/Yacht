@@ -1,4 +1,3 @@
-version: '3'
 services:
   yacht:
     container_name: yacht
@@ -13,6 +12,6 @@ services:
       - PUID=0
       - PGID=0
       - COMPOSE_DIR=/compose
-    image: yacht-sh/yacht:main
+    image: ghcr.io/yacht-sh/yacht:latest
 volumes:
   yacht:
