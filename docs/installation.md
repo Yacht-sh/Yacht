@@ -88,3 +88,25 @@ The repo also includes additional compose examples under:
 - `Docker-Compose-Files/docker-compose-w-traefik.yml`
 
 Review those files before use. They are examples, not guarantees of current production readiness.
+
+## Traefik Compose Notes
+
+The current Traefik example assumes:
+
+- image: `ghcr.io/yacht-sh/yacht:latest`
+- internal Yacht service port: `8000`
+- reverse proxy target protocol: `http`
+- external Traefik Docker network named `web`
+
+Why port `8000` is correct:
+
+- the container starts FastAPI behind the bundled `nginx.conf`
+- nginx listens on `8000` inside the container
+- Traefik should route to that internal nginx listener, not directly to uvicorn
+
+Before using the example, replace:
+
+- `yacht.domain.tld`
+- `domain.tld`
+- `dns` certificate resolver name
+- `./config` if you want a different persistent config path
