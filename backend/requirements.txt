@@ -41,5 +41,5 @@ typing-extensions==4.14.0
 urllib3==2.6.3
 uvicorn==0.22.0
 uvloop==0.21.0
-websocket-client==1.6.4
+websocket-client==1.9.0
 websockets==16.0
