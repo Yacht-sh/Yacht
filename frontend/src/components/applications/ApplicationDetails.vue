@@ -34,292 +34,15 @@
         </v-fade-transition>
       </div>
       <v-card color="foreground" class="pb-3" tile>
-        <v-row>
-          <v-col xs="12" sm="12" md="6" class="flex-grow-1 flex-shrink-0">
-            <v-card
-              :class="{
-                'mx-4 primary': $vuetify.breakpoint.smAndDown,
-                'ml-4 primary flex-shrink-1 flex-grow-0':
-                  $vuetify.breakpoint.mdAndUp,
-              }"
-            >
-              <v-card-title>
-                {{ app.name }}
-                <v-chip small class="ml-3" color="secondary">
-                  {{ appHostName }}
-                </v-chip>
-                <v-spacer />
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      size="x-small"
-                      color="secondary"
-                      v-bind="attrs"
-                      v-on="on"
-                      :href="supportBundleUrl(app.name)"
-                      target="_blank"
-                      download
-                      class="mx-1 my-1 hidden-sm-and-down"
-                    >
-                      <span class="hidden-md-and-down">Help</span>
-                      <v-icon>mdi-help-circle-outline</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Download Support Bundle</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      size="x-small"
-                      color="secondary"
-                      v-bind="attrs"
-                      v-on="on"
-                      class="mx-1 my-1 hidden-sm-and-down"
-                      @click="editClick({ Name: app.name })"
-                    >
-                      <span class="hidden-md-and-down">Edit</span>
-                      <v-icon>mdi-file-document-edit-outline</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Edit</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      size="x-small"
-                      @click="refresh()"
-                      v-bind="{ attrs }"
-                      v-on="on"
-                      color="secondary"
-                      ><v-icon>mdi-refresh</v-icon></v-btn
-                    >
-                  </template>
-                  <span>Refresh</span>
-                </v-tooltip>
-                <v-menu
-                  close-on-click
-                  close-on-content-click
-                  offset-y
-                  class="hidden-md-and-up"
-                >
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      size="small"
-                      color="secondary"
-                      v-bind="attrs"
-                      v-on="on"
-                      class="hidden-md-and-up mx-1"
-                    >
-                      <v-icon>mdi-chevron-down</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list color="foreground" class="hidden-md-and-up" dense>
-                    <v-list-item @click="editClick({ Name: app.name })">
-                      <v-list-item-icon>
-                        <v-icon>mdi-file-document-edit-outline</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Edit</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      :href="supportBundleUrl(app.name)"
-                      target="_blank"
-                      color="primary"
-                      download
-                    >
-                      <v-list-item-icon>
-                        <v-icon>mdi-help-circle-outline</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Help</v-list-item-title>
-                    </v-list-item>
-                    <v-divider />
-                    <v-list-item
-                      @click="
-                        AppAction({ Name: app.name, Action: 'start' });
-                        readAppLogs(app.name);
-                        readAppStats(app.name);
-                      "
-                    >
-                      <v-list-item-icon>
-                        <v-icon>mdi-play</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Start</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      @click="
-                        AppAction({ Name: app.name, Action: 'stop' });
-                        closeLogs();
-                        closeStats();
-                      "
-                    >
-                      <v-list-item-icon>
-                        <v-icon>mdi-stop</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Stop</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      @click="AppAction({ Name: app.name, Action: 'restart' })"
-                    >
-                      <v-list-item-icon>
-                        <v-icon>mdi-refresh</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Restart</v-list-item-title>
-                    </v-list-item>
-                    <v-divider />
-                    <v-list-item
-                      @click="
-                        AppAction({ Name: app.name, Action: 'kill' });
-                        closeLogs();
-                        closeStats();
-                      "
-                    >
-                      <v-list-item-icon>
-                        <v-icon>mdi-fire</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Kill</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click="removeDialog = true">
-                      <v-list-item-icon>
-                        <v-icon>mdi-delete</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-title>Remove</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-                <v-dialog v-if="app" v-model="removeDialog" max-width="290">
-                  <v-card>
-                    <v-card-title
-                      class="headline"
-                      style="word-break: break-all;"
-                    >
-                      Remove {{ app.name }}?
-                    </v-card-title>
-                    <v-card-text>
-                      Are you sure you want to permanently delete the
-                      template?<br />
-                      This action cannot be revoked.
-                    </v-card-text>
-                    <v-card-actions>
-                      <v-spacer></v-spacer>
-                      <v-btn text @click="removeDialog = false">
-                        Cancel
-                      </v-btn>
-                      <v-btn
-                        text
-                        color="error"
-                        @click="
-                          AppAction({ Name: app.name, Action: 'remove' });
-                          removeDialog = false;
-                          postRemove();
-                        "
-                      >
-                        Delete
-                      </v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </v-dialog>
-              </v-card-title>
-            </v-card>
-          </v-col>
-          <v-spacer class="hidden-sm-and-down" />
-          <v-col sm="12" md="6" class="hidden-sm-and-down">
-            <v-card
-              :class="{
-                'mx-4 primary': $vuetify.breakpoint.smAndDown,
-                'mr-4 primary': $vuetify.breakpoint.mdAndUp,
-              }"
-            >
-              <v-card-title class="d-flex justify-space-between">
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      v-bind="{ attrs }"
-                      v-on="on"
-                      color="secondary"
-                      class="mx-1 my-1"
-                      @click="
-                        AppAction({ Name: app.name, Action: 'start' });
-                        readAppLogs(app.name);
-                        readAppStats(app.name);
-                      "
-                    >
-                      <span class="hidden-md-and-down">start</span>
-                      <v-icon>mdi-play</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Start</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      v-bind="{ attrs }"
-                      v-on="on"
-                      color="secondary"
-                      class="mx-1 my-1"
-                      @click="
-                        AppAction({ Name: app.name, Action: 'stop' });
-                        closeLogs();
-                        closeStats();
-                      "
-                    >
-                      <span class="hidden-md-and-down">stop</span>
-                      <v-icon>mdi-stop</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Stop</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      v-bind="{ attrs }"
-                      v-on="on"
-                      color="secondary"
-                      class="mx-1 my-1"
-                      @click="AppAction({ Name: app.name, Action: 'restart' })"
-                    >
-                      <span class="hidden-md-and-down">restart</span>
-                      <v-icon>mdi-refresh</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Restart</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      v-bind="attrs"
-                      v-on="on"
-                      color="secondary"
-                      class="mx-1 my-1"
-                      @click="
-                        AppAction({ Name: app.name, Action: 'kill' });
-                        closeLogs();
-                        closeStats();
-                      "
-                    >
-                      <span class="hidden-md-and-down">kill</span>
-                      <v-icon>mdi-fire</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Kill</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      v-bind="attrs"
-                      v-on="on"
-                      color="secondary"
-                      class="mx-1 my-1"
-                      @click="removeDialog = true"
-                    >
-                      <span class="hidden-md-and-down">remove</span>
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Remove</span>
-                </v-tooltip>
-              </v-card-title>
-            </v-card>
-          </v-col>
-        </v-row>
+        <ApplicationDetailsHeader
+          v-if="app"
+          :app="app"
+          :app-host-name="appHostName"
+          :support-bundle-url="supportBundleUrl(app.name)"
+          @edit="editClick({ Name: app.name })"
+          @refresh="refresh()"
+          @action="handleAppAction"
+        />
         <transition
           name="slide"
           enter-active-class="animated slideInRight delay"
@@ -352,6 +75,7 @@ import AppStats from "./ApplicationDetailsComponents/AppStats";
 import AppProcesses from "./ApplicationDetailsComponents/AppProcesses";
 import AppContent from "./ApplicationDetailsComponents/AppContent";
 import AppLogs from "./ApplicationDetailsComponents/AppLogs";
+import ApplicationDetailsHeader from "./ApplicationDetailsComponents/ApplicationDetailsHeader";
 import { mapActions, mapGetters, mapState } from "vuex";
 export default {
   components: {
@@ -359,11 +83,11 @@ export default {
     Processes: AppProcesses,
     Logs: AppLogs,
     Stats: AppStats,
+    ApplicationDetailsHeader,
   },
   data() {
     return {
       AppTab: 1,
-      removeDialog: false,
       logs: [],
       stats: {
         time: [],
@@ -372,7 +96,7 @@ export default {
         mem_current: [],
         mem_total: [],
       },
-      connection: null,
+      logConnection: null,
       statConnection: null,
     };
   },
@@ -422,6 +146,36 @@ export default {
       this.closeStats();
       this.readAppLogs(appName);
       this.readAppStats(appName);
+    },
+    handleAppAction(action) {
+      if (!this.app) {
+        return;
+      }
+      const payload = { Name: this.app.name, Action: action };
+
+      if (action === "start") {
+        this.AppAction(payload);
+        this.readAppLogs(this.app.name);
+        this.readAppStats(this.app.name);
+        return;
+      }
+
+      if (action === "stop" || action === "kill") {
+        this.AppAction(payload);
+        this.closeLogs();
+        this.closeStats();
+        return;
+      }
+
+      if (action === "remove") {
+        this.AppAction(payload);
+        this.closeLogs();
+        this.closeStats();
+        this.postRemove();
+        return;
+      }
+
+      this.AppAction(payload);
     },
     postRemove() {
       this.$router.push({ name: "View Applications" });

@@ -1,103 +1,19 @@
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
 try:
     from sh import docker_compose
 except Exception:
     def docker_compose(*args, **kwargs):
         raise RuntimeError("docker-compose not available")
 import os
-import json
-import yaml
-import shutil
-import docker
-import io
-import zipfile
-import re
 
-from api.db.models.hosts import Host
-from api.settings import Settings
-from api.utils.compose import (
-    find_project_yml_files,
-    find_yml_files,
-    resolve_compose_file,
-    resolve_compose_project_dir,
-    resolve_project_compose_manifest,
+from api.actions.compose_projects import (
+    delete_compose,
+    generate_support_bundle,
+    get_compose,
+    get_compose_projects,
+    get_project_host,
+    write_compose,
 )
-from api.utils.docker_hosts import get_docker_client, host_metadata, resolve_host
-
-settings = Settings()
-PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
-
-
-def _validated_project_name(project_name):
-    if not isinstance(project_name, str):
-        raise HTTPException(400, "Invalid project name.")
-
-    normalized = project_name.strip()
-    if not normalized or not PROJECT_NAME_PATTERN.fullmatch(normalized):
-        raise HTTPException(400, "Invalid project name.")
-    if "/" in normalized or "\\" in normalized:
-        raise HTTPException(400, "Invalid project name.")
-    if normalized in {".", ".."} or normalized != os.path.basename(normalized):
-        raise HTTPException(400, "Invalid project name.")
-
-    return normalized
-
-
-def _validated_project_dir(project_name):
-    return resolve_compose_project_dir(project_name)
-
-
-def _existing_project_dir(project_name):
-    project_dir = resolve_compose_project_dir(project_name)
-    if project_dir.exists() and project_dir.is_dir():
-        return project_dir
-    return None
-
-
-def _project_metadata_path_for_dir(project_dir):
-    return project_dir / ".yacht.json"
-
-
-def _read_project_metadata(project_name):
-    project_dir = _existing_project_dir(project_name)
-    if project_dir is None:
-        return {}
-    metadata_path = _project_metadata_path_for_dir(project_dir)
-    if not metadata_path.is_file():
-        return {}
-    with metadata_path.open("r", encoding="utf-8") as metadata_file:
-        try:
-            return json.load(metadata_file)
-        except json.JSONDecodeError:
-            return {}
-
-
-def _write_project_metadata(project_dir, metadata):
-    metadata_path = _project_metadata_path_for_dir(project_dir)
-    with metadata_path.open("w", encoding="utf-8") as metadata_file:
-        json.dump(metadata, metadata_file)
-
-
-def _project_host_id(project_name, db):
-    metadata = _read_project_metadata(project_name)
-    if metadata.get("host_id") is not None:
-        return metadata["host_id"]
-    local_host = db.query(Host).filter(Host.connection_type == "local").first()
-    if local_host is None:
-        return resolve_host(db).id
-    return local_host.id
-
-
-def _project_host(project_name, db):
-    return resolve_host(db, _project_host_id(project_name, db))
-
-
-def _project_matches_host(project_name, host):
-    metadata = _read_project_metadata(project_name)
-    if metadata.get("host_id") is None:
-        return host.connection_type == "local"
-    return metadata["host_id"] == host.id
 
 """
 Runs an action on the specified compose project.
@@ -106,51 +22,14 @@ Runs an action on the specified compose project.
 
 def compose_action(name, action, db, host_id=None):
     compose = get_compose(name, db, host_id)
-    host = _project_host(compose["name"], db)
+    host = get_project_host(compose["name"], db)
     if action == "up":
-        try:
-            _action = docker_compose(
-                action,
-                "-d",
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
+        _action = _run_compose_command(host, compose, action, "-d")
     elif action == "create":
-        try:
-            _action = docker_compose(
-                "up",
-                "--no-start",
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
+        _action = _run_compose_command(host, compose, "up", "--no-start")
     else:
-        try:
-            _action = docker_compose(
-                action,
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
-    if _action.stdout.decode("UTF-8").rstrip():
-        _output = _action.stdout.decode("UTF-8").rstrip()
-    elif _action.stderr.decode("UTF-8").rstrip():
-        _output = _action.stderr.decode("UTF-8").rstrip()
-    else:
-        _output = "No Output"
+        _action = _run_compose_command(host, compose, action)
+    _output = _compose_output(_action)
     print(f"""Project {compose['name']} {action} successful.""")
     print(f"""Output: """)
     print(_output)
@@ -184,281 +63,39 @@ def compose_app_action(
     host_id=None,
 ):
     compose = get_compose(name, db, host_id)
-    host = _project_host(compose["name"], db)
+    host = get_project_host(compose["name"], db)
     print("RUNNING: " + compose["path"] + " docker-compose " + " " + action + " " + app)
     if action == "up":
-        try:
-            _action = docker_compose(
-                "up",
-                "-d",
-                app,
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
+        _action = _run_compose_command(host, compose, "up", "-d", app)
     elif action == "create":
-        try:
-            _action = docker_compose(
-                "up",
-                "--no-start",
-                app,
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
+        _action = _run_compose_command(host, compose, "up", "--no-start", app)
     elif action == "rm":
-        try:
-            _action = docker_compose(
-                "rm",
-                "--force",
-                "--stop",
-                app,
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
+        _action = _run_compose_command(host, compose, "rm", "--force", "--stop", app)
     else:
-        try:
-            _action = docker_compose(
-                action,
-                app,
-                _cwd=os.path.dirname(compose["path"]),
-                _env=check_dockerhost(host),
-            )
-        except Exception as exc:
-            if hasattr(exc, "stderr"):
-                raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
-            else:
-                raise HTTPException(400, exc)
-    if _action.stdout.decode("UTF-8").rstrip():
-        output = _action.stdout.decode("UTF-8").rstrip()
-    elif _action.stderr.decode("UTF-8").rstrip():
-        output = _action.stderr.decode("UTF-8").rstrip()
-    else:
-        output = "No Output"
+        _action = _run_compose_command(host, compose, action, app)
+    output = _compose_output(_action)
     print(f"""Project {compose['name']} App {name} {action} successful.""")
     print(f"""Output: """)
     print(output)
     return get_compose_projects(db, host_id)
 
 
-"""
-Checks for compose projects in the COMPOSE_DIR and
-returns most of the info inside them.
-"""
-
-
-def get_compose_projects(db, host_id=None):
-    files = find_yml_files()
-    host = resolve_host(db, host_id)
-
-    projects = []
-    for project, file in files.items():
-        if not _project_matches_host(project, host):
-            continue
-        volumes = []
-        networks = []
-        services = {}
-        with open(file, encoding="utf-8") as compose_file:
-            loaded_compose = yaml.load(compose_file, Loader=yaml.SafeLoader)
-        if loaded_compose:
-            if loaded_compose.get("volumes"):
-                for volume in loaded_compose.get("volumes"):
-                    volumes.append(volume)
-            if loaded_compose.get("networks"):
-                for network in loaded_compose.get("networks"):
-                    networks.append(network)
-            if loaded_compose.get("services"):
-                for service in loaded_compose.get("services"):
-                    services[service] = loaded_compose["services"][service]
-            _project = {
-                "name": project,
-                "path": file,
-                "version": loaded_compose.get("version", "3.9"),
-                "services": services,
-                "volumes": volumes,
-                "networks": networks,
-                "host_id": host.id,
-                "YachtHost": host_metadata(host),
-            }
-            projects.append(_project)
-        else:
-            print("ERROR: " + file + " is invalid or empty!")
-    return projects
-
-
-"""
-Returns detailed information on a specific compose
-project.
-"""
-
-
-def get_compose(name, db, host_id=None):
+def _run_compose_command(host, compose, *args):
     try:
-        project_host = _project_host(name, db)
-        if host_id is not None and project_host.id != host_id:
-            raise HTTPException(404, "Project not found on selected host.")
-        files = find_project_yml_files(name)
-    except HTTPException:
-        raise
-    for project, file in files.items():
-        if name == project:
-            networks = []
-            volumes = []
-            services = {}
-            try:
-                with open(file, encoding="utf-8") as compose_file:
-                    loaded_compose = yaml.load(compose_file, Loader=yaml.SafeLoader)
-            except yaml.scanner.ScannerError as exc:
-                raise HTTPException(422, f"{exc.problem_mark.line}:{exc.problem_mark.column} - {exc.problem}")
-            except OSError as exc:
-                raise HTTPException(400, exc.strerror) from exc
-            if loaded_compose.get("volumes"):
-                for volume in loaded_compose.get("volumes"):
-                    volumes.append(volume)
-            if loaded_compose.get("networks"):
-                for network in loaded_compose.get("networks"):
-                    networks.append(network)
-            if loaded_compose.get("services"):
-                for service in loaded_compose.get("services"):
-                    services[service] = loaded_compose["services"][service]
-            with open(file, encoding="utf-8") as content_file:
-                content = content_file.read()
-            compose_object = {
-                "name": project,
-                "path": file,
-                "version": loaded_compose.get("version", "-"),
-                "services": services,
-                "volumes": volumes,
-                "networks": networks,
-                "content": content,
-                "host_id": project_host.id,
-                "YachtHost": host_metadata(project_host),
-            }
-            return compose_object
-    else:
-        raise HTTPException(404, "Project " + name + " not found")
+        return docker_compose(
+            *args,
+            _cwd=os.path.dirname(compose["path"]),
+            _env=check_dockerhost(host),
+        )
+    except Exception as exc:
+        if hasattr(exc, "stderr"):
+            raise HTTPException(400, exc.stderr.decode("UTF-8").rstrip())
+        raise HTTPException(400, exc)
 
 
-"""
-Creates a compose directory (if one isn't there
-already) with the name of the project. Then writes
-the content of compose.content to it.
-"""
-
-
-def write_compose(compose, db):
-    project_name = _validated_project_name(compose.name)
-    project_dir = resolve_compose_project_dir(project_name)
-    host = resolve_host(db, compose.host_id)
-    if not project_dir.exists():
-        try:
-            project_dir.mkdir(parents=True)
-        except OSError as exc:
-            raise HTTPException(400, exc.strerror) from exc
-    compose_file = resolve_compose_file(project_name)
-    with compose_file.open("w", encoding="utf-8") as f:
-        try:
-            f.write(compose.content)
-        except TypeError as exc:
-            if exc.args[0] == "write() argument must be str, not None":
-                raise HTTPException(
-                    status_code=422, detail="Compose file cannot be empty."
-                )
-            raise HTTPException(422, "Invalid compose content.") from exc
-        except OSError as exc:
-            raise HTTPException(400, exc.strerror) from exc
-    _write_project_metadata(project_dir, {"host_id": host.id})
-
-    return get_compose(name=compose.name, db=db, host_id=host.id)
-
-
-"""
-Deletes a compose project after checking to see if
-it exists. This also deletes all files in the folder.
-"""
-
-
-def delete_compose(project_name, db, host_id=None):
-    project_name = _validated_project_name(project_name)
-    project_dir = resolve_compose_project_dir(project_name, must_exist=True)
-    compose_file = resolve_project_compose_manifest(project_name)
-    project_host = _project_host(project_name, db)
-    if host_id is not None and project_host.id != host_id:
-        raise HTTPException(404, "Project not found on selected host.")
-
-    if not compose_file.is_file():
-        raise HTTPException(404, "Project compose manifest not found.")
-    try:
-        shutil.rmtree(project_dir)
-    except OSError as exc:
-        raise HTTPException(400, exc.strerror) from exc
-    return get_compose_projects(db, host_id)
-
-
-def generate_support_bundle(project_name, db, host_id=None):
-    project_name = _validated_project_name(project_name)
-    compose_path = resolve_project_compose_manifest(project_name)
-    project_host = _project_host(project_name, db)
-    if host_id is not None and project_host.id != host_id:
-        raise HTTPException(404, "Project not found on selected host.")
-    _, dclient = get_docker_client(db, project_host.id)
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w") as zf, compose_path.open(
-        "r", encoding="utf-8"
-    ) as fp:
-        compose = yaml.load(fp, Loader=yaml.SafeLoader)
-        for _service in compose.get("services"):
-            print()
-            if len(compose.get("services").keys()) < 2:
-                try:
-                    if compose.get("services")[_service].get("container_name"):
-                        service = dclient.containers.get(
-                            compose.get("services")[_service].get("container_name")
-                        )
-                    else:
-                        service = dclient.containers.get(_service)
-                except docker.errors.NotFound as exc:
-                    raise HTTPException(
-                        exc.status_code,
-                        detail="container " + _service + " not found",
-                    )
-            else:
-                try:
-                    if compose.get("services")[_service].get("container_name"):
-                        service = dclient.containers.get(
-                            compose.get("services")[_service].get("container_name")
-                        )
-                    else:
-                        service = dclient.containers.get(
-                            project_name.lower() + "_" + _service + "_1"
-                        )
-                except docker.errors.NotFound as exc:
-                    raise HTTPException(
-                        exc.status_code,
-                        detail="container " + _service + " not found",
-                    )
-            service_log = service.logs()
-            zf.writestr(f"{_service}.log", service_log)
-        fp.seek(0)
-        zf.writestr("docker-compose.yml", fp.read())
-    stream.seek(0)
-    return StreamingResponse(
-        stream,
-        media_type="application/x-zip-compressed",
-        headers={
-            "Content-Disposition": f"attachment;filename={project_name}_bundle.zip"
-        },
-    )
+def _compose_output(action_result):
+    if action_result.stdout.decode("UTF-8").rstrip():
+        return action_result.stdout.decode("UTF-8").rstrip()
+    if action_result.stderr.decode("UTF-8").rstrip():
+        return action_result.stderr.decode("UTF-8").rstrip()
+    return "No Output"
