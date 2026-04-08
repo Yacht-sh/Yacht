@@ -6,7 +6,7 @@ certifi==2024.7.4
 cffi==2.0.0
 chardet==4.0.0
 click==8.1.6
-cryptography==46.0.6
+cryptography==46.0.7
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
 # fastapi is pinned for pydantic v1 compatibility
