@@ -42,6 +42,15 @@ On each push to `master`:
 - `yacht:latest`
 - `yacht:sha-<12-char-commit-sha>`
 
+## Target Platforms
+
+The published main image targets:
+
+- `linux/amd64`
+- `linux/arm64`
+
+The workflow does not publish `arm/v7`.
+
 ## Supply Chain Metadata
 
 Current Docker build jobs enable:
