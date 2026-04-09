@@ -5,7 +5,7 @@ bcrypt==4.0.1
 certifi==2024.7.4
 cffi==2.0.0
 chardet==4.0.0
-click==8.1.6
+click==8.3.2
 cryptography==46.0.7
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
