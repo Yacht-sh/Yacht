@@ -38,7 +38,7 @@
     "eslint": "^6.7.2",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-vue": "^6.2.2",
-    "prettier": "^1.19.1",
+    "prettier": "^3.8.1",
     "sass": "^1.98.0",
     "sass-loader": "^8.0.0",
     "serialize-javascript": "^7.0.3",
