@@ -1,4 +1,4 @@
-# CI/CD and Image Publishing
+# CI/CD and Main Image Publishing
 
 ## Registries
 
@@ -8,10 +8,6 @@ Main image:
 
 - `ghcr.io/<owner>/yacht`
 
-Agent image:
-
-- `ghcr.io/<owner>/yacht-agent`
-
 ## Workflow
 
 Current image publishing uses:
@@ -20,9 +16,7 @@ Current image publishing uses:
 
 Trigger:
 
-- push to `develop`
 - push to `master`
-- manual dispatch
 
 ## Verification Stages
 
@@ -43,19 +37,10 @@ Before publishing, the workflow verifies:
 
 ## Publish Tags
 
-On `develop`:
-
-- `yacht:dev-latest`
-- `yacht:dev-<YYYYMMDD-HHMMSS>`
-- `yacht-agent:dev-latest`
-- `yacht-agent:dev-<YYYYMMDD-HHMMSS>`
-
-On `master`:
+On each push to `master`:
 
 - `yacht:latest`
-- `yacht:<YYYYMMDD-HHMMSS>`
-- `yacht-agent:latest`
-- `yacht-agent:<YYYYMMDD-HHMMSS>`
+- `yacht:sha-<12-char-commit-sha>`
 
 ## Supply Chain Metadata
 
@@ -71,4 +56,4 @@ The workflows log in to GHCR with:
 - `GHCR_USERNAME` and `GHCR_TOKEN` when provided
 - otherwise `github.actor` and `GITHUB_TOKEN`
 
-There is no Docker Hub publishing path in the current repo configuration.
+There is no Docker Hub publishing path in the current repo configuration, and the workflow no longer publishes a separate agent image.
