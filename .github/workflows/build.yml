@@ -208,6 +208,35 @@ jobs:
           username: ${{ secrets.GHCR_USERNAME != '' && secrets.GHCR_USERNAME || github.actor }}
           password: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
+      - name: Verify GHCR access for main image package
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME != '' && secrets.GHCR_USERNAME || github.actor }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          PACKAGE_PATH: ${{ steps.prep.outputs.owner_lc }}/yacht
+        run: |
+          status_code="$(
+            curl -sS -o /tmp/ghcr-main-package-check.txt -w '%{http_code}' \
+              -u "${GHCR_USERNAME}:${GHCR_PASSWORD}" \
+              "https://ghcr.io/v2/${PACKAGE_PATH}/tags/list?n=1"
+          )"
+
+          case "${status_code}" in
+            200|404)
+              echo "GHCR package access check returned ${status_code}; continuing."
+              ;;
+            401|403)
+              echo "GHCR package access check failed with HTTP ${status_code} for ${PACKAGE_PATH}." >&2
+              echo "The workflow can authenticate to GHCR, but it cannot access the main image package namespace." >&2
+              echo "Grant Yacht-sh/Yacht Actions access to ghcr.io/${PACKAGE_PATH} or provide GHCR_USERNAME/GHCR_TOKEN with read:packages and write:packages." >&2
+              exit 1
+              ;;
+            *)
+              echo "Unexpected GHCR package access response ${status_code} for ${PACKAGE_PATH}." >&2
+              cat /tmp/ghcr-main-package-check.txt >&2 || true
+              exit 1
+              ;;
+          esac
+
       - name: Build and push main image
         uses: docker/build-push-action@v6
         with:
