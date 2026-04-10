@@ -18,6 +18,11 @@ Vue.use(VueChatScroll);
 
 Vue.config.productionTip = false;
 
+// Configure axios to send cookies with all requests
+axios.defaults.withCredentials = true;
+axios.defaults.xsrfCookieName = "csrf_access_token";
+axios.defaults.xsrfHeaderName = "X-CSRF-TOKEN";
+
 // Handle Token Refresh on 401
 function createAxiosResponseInterceptor() {
   const interceptor = axios.interceptors.response.use(
