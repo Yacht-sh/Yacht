@@ -10,16 +10,9 @@ RUN npm ci --legacy-peer-deps --no-audit --no-fund
 COPY ./frontend/ ./
 RUN npm run build
 
-# Runtime image
-FROM python:3.11-slim AS deploy-stage
+# Build Python wheels in an isolated stage so compiler toolchains do not land in runtime.
+FROM python:3.11-slim AS python-wheel-builder
 
-ARG DOCKER_COMPOSE_VERSION=v2.40.3
-
-ENV PYTHONIOENCODING=UTF-8
-ENV THEME=Default
-ENV PYTHONPATH=/api
-
-WORKDIR /api
 COPY ./backend/requirements.txt ./
 
 RUN apt-get update && \
@@ -34,41 +27,40 @@ RUN apt-get update && \
     zlib1g-dev \
     libyaml-dev \
     python3-dev \
-    nginx \
-    curl \
     ca-certificates \
-    bash && \
+    && \
     rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    arch="$(uname -m)"; \
-    case "${arch}" in \
-      x86_64) compose_arch="x86_64" ;; \
-      aarch64) compose_arch="aarch64" ;; \
-      armv7l) compose_arch="armv7" ;; \
-      armv6l) compose_arch="armv6" ;; \
-      ppc64le) compose_arch="ppc64le" ;; \
-      s390x) compose_arch="s390x" ;; \
-      riscv64) compose_arch="riscv64" ;; \
-      *) echo "Unsupported architecture: ${arch}" && exit 1 ;; \
-    esac; \
-    curl -fL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" -o /usr/local/bin/docker-compose; \
-    chmod +x /usr/local/bin/docker-compose
 
 RUN pip3 install --upgrade pip setuptools wheel && \
-    pip3 install --no-cache-dir -r requirements.txt && \
-    apt-get purge -y --auto-remove \
-      build-essential \
-      pkg-config \
-      libffi-dev \
-      libssl-dev \
-      libpq-dev \
-      default-libmysqlclient-dev \
-      libjpeg-dev \
-      zlib1g-dev \
-      libyaml-dev \
-      python3-dev && \
+    pip3 wheel --wheel-dir /wheels -r requirements.txt setuptools
+
+# Runtime image
+FROM python:3.11-slim AS deploy-stage
+
+ENV PYTHONIOENCODING=UTF-8
+ENV THEME=Default
+ENV PYTHONPATH=/api
+
+WORKDIR /api
+COPY ./backend/requirements.txt ./
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nginx \
+    docker-compose \
+    ca-certificates \
+    bash \
+    libpq5 \
+    libmariadb3 \
+    libjpeg62-turbo \
+    && \
     rm -rf /var/lib/apt/lists/*
+
+COPY --from=python-wheel-builder /wheels /wheels
+
+RUN pip3 install --no-cache-dir --no-index --find-links=/wheels setuptools && \
+    pip3 install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
+    rm -rf /wheels
 
 RUN groupadd -r abc && useradd -r -g abc abc
 
