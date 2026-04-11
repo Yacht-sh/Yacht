@@ -6,31 +6,42 @@ The image publish workflow is defined in [`../.github/workflows/build.yml`](../.
 
 Main points:
 
-- runs on pushes to `master` and `develop`
+- runs on pushes to `master`
 - verifies frontend, backend, and agent before publishing
 - publishes the main Yacht image for:
   - `linux/amd64`
   - `linux/arm64`
-- publishes the agent image separately
+- does not publish a separate agent image in this workflow
 
 ## Current Tag Behavior
 
-On `master`:
+On each push to `master`:
 
 - main image channel tag: `latest`
-- version tag: UTC timestamp
-
-On `develop`:
-
-- main image channel tag: `dev-latest`
-- version tag: `dev-<timestamp>`
+- version tag: `sha-<12-char-commit-sha>`
+- additional short SHA tag emitted by metadata action
 
 ## GHCR Login Behavior
 
 The workflow logs into GHCR with:
 
-- `GHCR_USERNAME` / `GHCR_TOKEN` if they are configured
-- otherwise `github.actor` / `GITHUB_TOKEN`
+- `github.actor` / `GITHUB_TOKEN`
+
+The workflow prints the auth context before push to make troubleshooting explicit.
+
+## GHCR Preflight Checks
+
+Before `docker/build-push-action`, the workflow performs preflight checks:
+
+1. registry-level auth check against `https://ghcr.io/v2/`
+2. package access check against `https://ghcr.io/v2/<owner>/yacht/tags/list?n=1`
+
+Expected package check responses:
+
+- `200`: package exists and token can read it
+- `404`: package does not exist yet (first push path), credentials still acceptable
+
+Failing responses (`401`/`403`) are surfaced early with remediation guidance so failures are easier to distinguish from Docker Buildx errors.
 
 ## Known GHCR Failure Mode
 
@@ -40,8 +51,7 @@ Typical causes:
 
 - the existing `ghcr.io/yacht-sh/yacht` package is not linked to the `Yacht-sh/Yacht` repository
 - the repository has not been granted package access
-- the fallback `GITHUB_TOKEN` does not have the effective package permissions needed for that existing package namespace
-- a PAT is being used without the required `read:packages` and `write:packages` scopes
+- the workflow token does not have effective package permissions for that existing package namespace
 
 ## What To Check In GitHub
 
@@ -51,6 +61,8 @@ Typical causes:
    - `read:packages`
    - `write:packages`
 4. If the org uses SSO, authorize the token for the org.
+
+Note: this workflow currently uses `GITHUB_TOKEN` for push and preflight. If your org policy requires a PAT for package publish, update the workflow auth step and preflight env accordingly.
 
 ## Platform Notes
 
