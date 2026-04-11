@@ -191,6 +191,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.prep.outputs.channel_tag }}
             type=raw,value=${{ steps.prep.outputs.version_tag }}
+            type=sha,format=short,prefix=sha-
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -207,6 +208,47 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.GHCR_USERNAME != '' && secrets.GHCR_USERNAME || github.actor }}
           password: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Show GHCR auth context
+        run: |
+          if [ -n "${{ secrets.GHCR_USERNAME }}" ] && [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+            auth_mode="GHCR secrets"
+            auth_user="${{ secrets.GHCR_USERNAME }}"
+          else
+            auth_mode="GITHUB_TOKEN fallback"
+            auth_user="${{ github.actor }}"
+          fi
+          echo "GHCR auth mode: ${auth_mode}"
+          echo "GHCR auth user: ${auth_user}"
+          echo "Target image: ghcr.io/${{ steps.prep.outputs.owner_lc }}/yacht"
+
+      - name: Verify GHCR access for main image package
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME != '' && secrets.GHCR_USERNAME || github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          GHCR_IMAGE_REPO: ${{ steps.prep.outputs.owner_lc }}/yacht
+        run: |
+          status_code="$(curl -sS -o /tmp/ghcr_check_body.txt -w "%{http_code}" \
+            -u "${GHCR_USERNAME}:${GHCR_TOKEN}" \
+            "https://ghcr.io/v2/${GHCR_IMAGE_REPO}/tags/list?n=1")"
+
+          case "${status_code}" in
+            200|404)
+              echo "GHCR preflight passed with status ${status_code}."
+              ;;
+            401|403)
+              echo "GHCR preflight failed with status ${status_code}."
+              echo "Repository '${{ github.repository }}' does not have package write access to ghcr.io/${GHCR_IMAGE_REPO}."
+              echo "Ensure package access is granted and GHCR_USERNAME/GHCR_TOKEN have read:packages + write:packages."
+              cat /tmp/ghcr_check_body.txt || true
+              exit 1
+              ;;
+            *)
+              echo "Unexpected GHCR preflight status: ${status_code}"
+              cat /tmp/ghcr_check_body.txt || true
+              exit 1
+              ;;
+          esac
 
       - name: Build and push main image
         uses: docker/build-push-action@v6
