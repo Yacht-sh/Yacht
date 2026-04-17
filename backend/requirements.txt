@@ -19,7 +19,7 @@ httptools==0.7.1
 idna==3.11
 makefun==1.16.0
 # optional relational database drivers
-mysqlclient==2.2.0
+mysqlclient==2.2.8
 passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.7
