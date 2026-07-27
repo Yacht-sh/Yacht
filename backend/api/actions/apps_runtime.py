@@ -207,32 +207,64 @@ def app_update(app_name, db, host_id=None, apps_getter=None):
     return apps_getter(db=db, host_id=host_id) if apps_getter else None
 
 
-def _update_self(background_tasks):
-    dclient = docker.from_env()
-    yacht_id = _current_container_id()
+def _yacht_container_id():
     try:
+        with open("/proc/self/cgroup", encoding="utf-8") as cgroup_file:
+            for line in cgroup_file:
+                candidate = line.strip().split("/")[-1]
+                if not candidate:
+                    continue
+                if candidate.endswith(".scope"):
+                    candidate = candidate[:-6]
+                for prefix in ("docker-", "libpod-", "cri-containerd-"):
+                    if candidate.startswith(prefix):
+                        candidate = candidate[len(prefix):]
+                        break
+                if re.fullmatch(r"[0-9a-f]{12,64}", candidate):
+                    return candidate
+    except OSError as exc:
+        raise HTTPException(
+            500, f"Unable to read container metadata: {exc.strerror}"
+        ) from exc
+    raise HTTPException(500, "Unable to determine Yacht container ID")
+
+
+def _yacht_container_name(container_id):
+    if not container_id:
+        return None
+    try:
+        _, dclient = get_docker_client()
+        yacht = dclient.containers.get(container_id)
+        return yacht.name
+    except Exception:
+        return container_id
+
+
+def _update_self(background_tasks):
+    yacht_id = _yacht_container_id()
+    try:
+        dclient = docker.from_env()
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:
         print(exc)
-        if exc.response.status_code == 404:
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail="Unable to get Yacht container ID",
-            )
-        status_code = 500
-        detail = exc.args[0]
-        raise HTTPException(status_code=status_code, detail=detail)
-    background_tasks.add_task(update_self_in_background, yacht)
+        if hasattr(exc, "response") and exc.response is not None:
+            status_code = getattr(exc.response, "status_code", 500)
+            detail = getattr(exc, "explanation", str(exc))
+            raise HTTPException(status_code=status_code, detail=detail)
+        raise HTTPException(status_code=400, detail=exc.args)
+    background_tasks.add_task(update_self_in_background, yacht.name)
     return {"result": "successful"}
 
 
-def update_self_in_background(yacht):
+def update_self_in_background(container_name):
+    if not container_name:
+        return
     dclient = docker.from_env()
     volumes = {"/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}}
-    print("**** Updating " + yacht.name + "****")
+    print(f"**** Updating {container_name} ****")
     dclient.containers.run(
         image="ghcr.io/nicholas-fedor/watchtower:latest",
-        command="--cleanup --run-once " + yacht.name,
+        command=f"--cleanup --run-once {container_name}",
         remove=True,
         detach=True,
         volumes=volumes,
@@ -240,23 +272,17 @@ def update_self_in_background(yacht):
 
 
 def check_self_update():
-    dclient = docker.from_env()
-    yacht_id = _current_container_id()
+    yacht_id = _yacht_container_id()
     try:
+        dclient = docker.from_env()
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:
         print(exc)
-        if hasattr(exc, "response") and exc.response.status_code == 404:
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail="Unable to get Yacht container ID",
-            )
-        if hasattr(exc, "response"):
-            raise HTTPException(
-                status_code=exc.response.status_code, detail=exc.explanation
-            )
+        if hasattr(exc, "response") and exc.response is not None:
+            status_code = getattr(exc.response, "status_code", 500)
+            detail = getattr(exc, "explanation", str(exc))
+            raise HTTPException(status_code=status_code, detail=detail)
         raise HTTPException(status_code=400, detail=exc.args)
-
     return _check_updates(yacht.image.tags[0])
 
 

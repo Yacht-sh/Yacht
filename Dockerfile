@@ -53,7 +53,6 @@ RUN apt-get update && \
     libmariadb3 \
     libjpeg62-turbo \
     docker.io \
-    docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=python-wheel-builder /wheels /wheels
