@@ -11,6 +11,8 @@ The current `develop` branch supports two host management modes:
 - direct Docker API hosts added manually in the UI
 - agent-managed hosts where a `yacht-agent` container connects back to the main Yacht server
 
+Agent-managed hosts can report lightweight host stats and accept queued compose lifecycle jobs (`up`, `down`, `pull`) from the main Yacht control plane.
+
 ## Project Status
 
 This application had gone unmaintained for a while. The current work on `develop` is focused on bringing dependencies, workflows, and security posture back up to date.
@@ -84,6 +86,24 @@ volumes:
 ```
 
 Agent-managed hosts self-register. You do not create them manually from the Hosts form.
+
+## Agent Compose Controls
+
+If the enrolled agent reports compose capability, the Yacht UI exposes per-host compose actions for `up`, `down`, and `pull`. Use the compose project name from the agent host in the UI; the server queues the action and the agent executes it against its local Docker environment.
+
+## Agent Environment Variables
+
+| Variable | Description |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| YACHT_SERVER_URL | Base URL of the main Yacht server. The agent appends `/api` automatically if needed. |
+| YACHT_AGENT_ENROLLMENT_TOKEN | Shared secret used during agent registration with the main Yacht server. |
+| YACHT_AGENT_NAME | Friendly host name shown in Yacht. Defaults to the container hostname. |
+| YACHT_AGENT_STATE | Path to the local JSON state file for the agent token and IDs. Defaults to `/config/agent-state.json`. |
+| YACHT_AGENT_HEARTBEAT_INTERVAL | Seconds between heartbeats. Defaults to `30`. |
+| YACHT_AGENT_JOB_POLL_INTERVAL | Seconds between job polls. Defaults to `5`. |
+| YACHT_AGENT_VERIFY_SSL | Set to `false` only if the Yacht server uses a self-signed certificate and the agent cannot validate it. |
+| YACHT_AGENT_LOG_LEVEL | Python log level for the agent. Defaults to `INFO`. |
+| YACHT_AGENT_VERSION | Override agent version for registration/heartbeat. |
 
 ## Features So Far
 
