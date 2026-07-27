@@ -52,9 +52,7 @@ RUN apt-get update && \
     libpq5 \
     libmariadb3 \
     libjpeg62-turbo \
-    docker.io \
     && rm -rf /var/lib/apt/lists/*
-
 COPY --from=python-wheel-builder /wheels /wheels
 
 RUN pip3 install --no-cache-dir --no-index --find-links=/wheels setuptools && \
