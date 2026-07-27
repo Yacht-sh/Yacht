@@ -18,5 +18,8 @@ services:
       COMPOSE_DIR: /config/compose/
       THEME: Default
     volumes:
-      - ./.local/yacht-config:/config
+      - yacht-config:/config
       - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  yacht-config: {}

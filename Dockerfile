@@ -47,14 +47,14 @@ COPY ./backend/requirements.txt ./
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     nginx \
-    docker-compose \
-    ca-certificates \
     bash \
+    ca-certificates \
     libpq5 \
     libmariadb3 \
     libjpeg62-turbo \
-    && \
-    rm -rf /var/lib/apt/lists/*
+    docker.io \
+    docker-compose-plugin \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=python-wheel-builder /wheels /wheels
 
