@@ -9,13 +9,16 @@
   },
   "dependencies": {
     "animate.css": "^4.1.1",
-    "axios": "^1.15.0",
+    "axios": "^1.19.0",
     "brace": "^0.11.1",
     "chart.js": "^2.9.4",
     "chartjs-plugin-crosshair": "1.1.6",
     "core-js": "^3.13.1",
+    "js-yaml": "^5.2.2",
+    "lodash": "^4.18.1",
     "moment": "^2.29.1",
     "register-service-worker": "^1.7.1",
+    "shell-quote": "^1.10.0",
     "vee-validate": "^3.4.15",
     "vue": "^2.7.16",
     "vue-chartjs": "^3.5.1",
@@ -23,7 +26,8 @@
     "vue-router": "^3.6.5",
     "vue2-ace-editor": "0.0.15",
     "vuetify": "^2.7.2",
-    "vuex": "^3.6.2"
+    "vuex": "^3.6.2",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
