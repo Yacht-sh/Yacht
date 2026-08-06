@@ -79,6 +79,11 @@ export default {
         icon: "mdi-folder"
       },
       {
+        text: "Containers",
+        to: "/containers",
+        icon: "mdi-view-list"
+      },
+      {
         text: "Projects",
         to: "/projects",
         icon: "mdi-book-open"

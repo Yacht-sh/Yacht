@@ -60,9 +60,15 @@ Current Docker build jobs enable:
 
 ## Authentication
 
-The workflows log in to GHCR with:
+The workflow logs in to GHCR with:
 
-- `GHCR_USERNAME` and `GHCR_TOKEN` when provided
-- otherwise `github.actor` and `GITHUB_TOKEN`
+- `github.actor` and `GITHUB_TOKEN`
+
+Before push, the workflow also runs GHCR preflight checks to fail fast on credential and package-scope issues:
+
+- registry auth check: `https://ghcr.io/v2/`
+- package access check: `https://ghcr.io/v2/<owner>/yacht/tags/list?n=1`
+
+This helps separate permission failures from Docker Buildx build failures.
 
 There is no Docker Hub publishing path in the current repo configuration, and the workflow no longer publishes a separate agent image.

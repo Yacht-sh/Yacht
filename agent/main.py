@@ -19,6 +19,7 @@ VERIFY_SSL = os.environ.get("YACHT_AGENT_VERIFY_SSL", "true").strip().lower() in
     "on",
 }
 SUPPORTED_CONTAINER_ACTIONS = {"start", "stop", "restart", "remove", "kill"}
+SUPPORTED_COMPOSE_ACTIONS = {"up", "down", "pull"}
 
 logging.basicConfig(
     level=os.environ.get("YACHT_AGENT_LOG_LEVEL", "INFO"),
@@ -74,7 +75,8 @@ def _capabilities() -> dict[str, bool]:
         "images": True,
         "volumes": True,
         "networks": True,
-        "compose": False,
+        "compose": True,
+        "host_stats": True,
     }
 
 
@@ -89,16 +91,64 @@ def _registration_payload(client):
     }
 
 
-def _heartbeat_payload(client):
-    containers = client.containers.list(all=True)
-    version = client.version()
-    return {
-        "version": os.environ.get("YACHT_AGENT_VERSION", "0.1.0"),
-        "docker_version": version.get("Version"),
-        "capabilities": _capabilities(),
-        "containers_running": len([c for c in containers if c.status == "running"]),
-        "containers_total": len(containers),
+def _host_stats() -> dict | None:
+    try:
+        with open("/proc/stat", "r", encoding="utf-8") as f:
+            cpu_line = f.readline().strip()
+    except OSError:
+        cpu_line = ""
+    cpu_parts = cpu_line.split()
+    cpu_fields = {
+        "user": int(cpu_parts[1]) if len(cpu_parts) > 1 else 0,
+        "system": int(cpu_parts[2]) if len(cpu_parts) > 2 else 0,
+        "idle": int(cpu_parts[3]) if len(cpu_parts) > 3 else 0,
+        "iowait": int(cpu_parts[4]) if len(cpu_parts) > 4 else 0,
     }
+    mem = {}
+    try:
+        with open("/proc/meminfo", "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.split()
+                if parts:
+                    mem[parts[0].rstrip(":")] = int(parts[1])
+    except OSError:
+        pass
+    mem_total = mem.get("MemTotal", 0)
+    mem_available = mem.get("MemAvailable", 0)
+    mem_used = max(mem_total - mem_available, 0)
+    uptime_seconds = 0.0
+    try:
+        with open("/proc/uptime", "r", encoding="utf-8") as f:
+            uptime_seconds = float(f.read().split()[0])
+    except OSError:
+        pass
+
+    return {
+        "cpu": cpu_fields,
+        "memory": {
+            "total_bytes": mem_total * 1024,
+            "available_bytes": mem_available * 1024,
+            "used_bytes": mem_used * 1024,
+            "percent_used": round((mem_used / mem_total) * 100, 2)
+            if mem_total
+            else 0.0,
+        },
+        "uptime_seconds": uptime_seconds,
+    }
+
+
+def _heartbeat_payload(client):
+    payload = {
+        "version": os.environ.get("YACHT_AGENT_VERSION", "0.1.0"),
+        "docker_version": client.version().get("Version"),
+        "capabilities": _capabilities(),
+        "containers_running": len([c for c in client.containers.list(all=True) if c.status == "running"]),
+        "containers_total": len(client.containers.list(all=True)),
+    }
+    stats = _host_stats()
+    if stats is not None:
+        payload["host_stats"] = stats
+    return payload
 
 
 def _safe_container_record(container):
@@ -136,7 +186,7 @@ def _safe_network_record(network, containers):
     attrs["inUse"] = any(
         any(
             details.get("NetworkID") == attrs.get("Id")
-            for details in container.attrs.get("NetworkSettings", {})
+            for details in container.attrs.get("ContainerNetworkSettings", {})
             .get("Networks", {})
             .values()
         )
@@ -159,6 +209,35 @@ def _inventory_payload(client):
         "volumes": [_safe_volume_record(volume, containers) for volume in volumes],
         "networks": [_safe_network_record(network, containers) for network in networks],
     }
+
+
+def _compose_payload(client):
+    projects = {}
+    containers = client.containers.list(all=True)
+    for container in containers:
+        labels = container.attrs.get("Config", {}).get("Labels") or {}
+        project = labels.get("com.docker.compose.project")
+        if not project:
+            continue
+        entry = projects.setdefault(
+            project,
+            {
+                "name": project,
+                "containers": [],
+                "working_dir": labels.get("com.docker.compose.working_dir"),
+                "config_files": labels.get("com.docker.compose.config.file"),
+            },
+        )
+        entry["containers"].append(
+            {
+                "id": container.id,
+                "name": container.name,
+                "service": labels.get("com.docker.compose.service"),
+                "state": container.status,
+                "exit_code": container.attrs.get("State", {}).get("ExitCode"),
+            }
+        )
+    return projects
 
 
 def _session():
@@ -218,7 +297,10 @@ def heartbeat(session, client, state):
 def sync_inventory(session, client, state):
     response = session.post(
         f"{_normalize_server_url()}/agents/sync",
-        json=_inventory_payload(client),
+        json={
+            **_inventory_payload(client),
+            "compose_projects": _compose_payload(client),
+        },
         headers=_agent_headers(state),
         timeout=30,
         verify=VERIFY_SSL,
@@ -290,6 +372,46 @@ def _run_container_action(client, payload):
         "container": container_name,
         "action": action,
         "inventory": _inventory_payload(client),
+        "compose_projects": _compose_payload(client),
+    }
+
+
+def _run_compose_action(client, payload):
+    project = (payload or {}).get("project")
+    action = (payload or {}).get("action")
+    working_dir = (payload or {}).get("working_dir")
+    if not project or action not in SUPPORTED_COMPOSE_ACTIONS:
+        raise ValueError("Compose job requires project and a supported action.")
+    if action == "up":
+        services = (payload or {}).get("services") or []
+        detached = True
+        remove_orphans = True
+        kwargs = {"project_config_name": project, "detached": detached}
+        if services:
+            kwargs["services"] = services
+        if remove_orphans:
+            kwargs["remove_orphans"] = remove_orphans
+        if working_dir:
+            kwargs["working_dir"] = working_dir
+        client.compose.up(**kwargs)
+    elif action == "down":
+        kwargs = {"project_config_name": project, "remove_orphans": True}
+        if working_dir:
+            kwargs["working_dir"] = working_dir
+        client.compose.down(**kwargs)
+    elif action == "pull":
+        kwargs = {"project_config_name": project}
+        if working_dir:
+            kwargs["working_dir"] = working_dir
+        client.compose.pull(**kwargs)
+    else:
+        raise ValueError(f"Unsupported compose action: {action}")
+
+    return {
+        "project": project,
+        "action": action,
+        "inventory": _inventory_payload(client),
+        "compose_projects": _compose_payload(client),
     }
 
 
@@ -307,13 +429,15 @@ def execute_job(session, client, state, job):
     try:
         if job_type == "container_action":
             result = _run_container_action(client, payload)
+        elif job_type == "compose_action":
+            result = _run_compose_action(client, payload)
         else:
             raise ValueError(f"Unsupported job type: {job_type}")
     except docker.errors.DockerException as exc:
         logger.error("Agent job %s failed: %s", job_id, exc)
         submit_job_result(session, state, job_id, "failed", error=str(exc))
         return True
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         logger.error("Agent job %s failed: %s", job_id, exc)
         submit_job_result(session, state, job_id, "failed", error=str(exc))
         return True
@@ -360,7 +484,7 @@ def main():
             logger.error("HTTP error talking to Yacht: %s", exc)
         except docker.errors.DockerException as exc:
             logger.error("Local Docker error: %s", exc)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             logger.exception("Agent loop failed: %s", exc)
 
         time.sleep(max(JOB_POLL_INTERVAL, 2))

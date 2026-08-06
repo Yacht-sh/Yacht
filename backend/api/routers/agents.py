@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.orm import Session
 
@@ -11,9 +11,11 @@ from api.db.crud.agents import (
     complete_agent_job,
     heartbeat_agent,
     list_agents,
+    queue_agent_job,
     register_agent,
     sync_agent_inventory,
 )
+from api.db.crud.hosts import get_host
 from api.db.schemas.agents import (
     AgentHeartbeat,
     AgentHeartbeatResponse,
@@ -125,3 +127,43 @@ def sync(
         host_id=host.id,
         inventory_updated_at=agent.inventory_updated_at,
     )
+
+
+@router.post("/compose-action")
+def compose_action(
+    payload: dict,
+    db: Session = Depends(get_db),
+    Authorize: AuthJWT = Depends(),
+):
+    auth_check(Authorize)
+    host_id = payload.get("host_id")
+    if host_id is None:
+        raise HTTPException(status_code=400, detail="host_id is required.")
+
+    host = get_host(db, host_id)
+    if host.connection_type != "agent":
+        raise HTTPException(
+            status_code=400,
+            detail="Compose action jobs are only supported for agent hosts.",
+        )
+
+    project = (payload or {}).get("project")
+    action = (payload or {}).get("action")
+    working_dir = (payload or {}).get("working_dir")
+    if not project or action not in {"up", "down", "pull"}:
+        raise HTTPException(
+            status_code=400,
+            detail="project and a supported action are required.",
+        )
+
+    job_payload = {"project": project, "action": action}
+    if working_dir:
+        job_payload["working_dir"] = working_dir
+
+    job = queue_agent_job(
+        db=db,
+        host_id=host.id,
+        job_type="compose_action",
+        payload=job_payload,
+    )
+    return {"host_id": host.id, "job_id": job.job_key, "status": job.status}

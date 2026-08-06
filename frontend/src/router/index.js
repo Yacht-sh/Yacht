@@ -147,6 +147,11 @@ const routes = [
     ]
   },
   {
+    path: "/containers",
+    name: "Containers",
+    component: () => import("../views/Container.vue")
+  },
+  {
     path: "/projects",
     component: Project,
     children: [

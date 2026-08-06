@@ -138,7 +138,7 @@ export default {
   },
   methods: {
     async get_api_keys() {
-      let url = "/api/auth/api/keys";
+      let url = "/auth/api/keys";
       await axios
         .get(url)
         .then(resp => {
@@ -159,7 +159,7 @@ export default {
     },
     generate_api_key() {
       const payload = { ...this.keyForm };
-      let url = "/api/auth/api/keys/new";
+      let url = "/auth/api/keys/new";
       axios.post(url, payload).then(resp => {
         this.newKey = resp.data.token;
         this.apiKeys.push(resp.data);
@@ -168,7 +168,7 @@ export default {
     revoke_api_key(key) {
       this.isLoading = true;
       axios
-        .get(`/api/auth/api/keys/${key.id}`)
+        .get(`/auth/api/keys/${key.id}`)
         .then(() => {
           let idx = this.apiKeys.findIndex(x => x.id === key.id);
           this.apiKeys.splice(idx, 1);

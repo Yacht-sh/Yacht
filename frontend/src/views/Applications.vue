@@ -11,7 +11,9 @@
 </template>
 
 <script>
-export default {};
+export default {
+  name: "Applications"
+};
 </script>
 
 <style lang="css"></style>
