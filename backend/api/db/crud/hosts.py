@@ -1,8 +1,29 @@
 from datetime import datetime
 
 from fastapi import HTTPException
+from sqlalchemy import inspect
 
+from api.db.database import Base
 from api.db.models.hosts import Host
+
+
+def _ensure_host_columns(db):
+    """Add new columns to existing hosts table (SQLite has no ALTER TABLE ADD COLUMN IF NOT EXISTS)."""
+    inspector = inspect(db.bind)
+    existing = {col["name"] for col in inspector.get_columns("hosts")}
+    new_cols = {
+        "working_dir": "VARCHAR(512)",
+        "notes": "TEXT",
+    }
+    for col_name, col_type in new_cols.items():
+        if col_name not in existing:
+            db.execute(f"ALTER TABLE hosts ADD COLUMN {col_name} {col_type}")
+            db.commit()
+
+
+def _ensure_tables(db):
+    """Create any tables that don't exist yet (for fresh installs)."""
+    Base.metadata.create_all(bind=db.bind)
 
 
 def get_hosts(db):
@@ -34,6 +55,8 @@ def set_default_host(db, host):
 
 
 def ensure_local_host(db):
+    _ensure_tables(db)
+    _ensure_host_columns(db)
     host = db.query(Host).filter(Host.connection_type == "local").first()
     default_host = db.query(Host).filter(Host.is_default == True).first()
     if host is None:
@@ -78,6 +101,8 @@ def create_host(db, host_create):
         name=host_create.name,
         connection_type=host_create.connection_type,
         docker_host=host_create.docker_host,
+        working_dir=host_create.working_dir,
+        notes=host_create.notes,
         is_active=True,
         is_default=host_create.is_default,
         last_seen=datetime.utcnow(),

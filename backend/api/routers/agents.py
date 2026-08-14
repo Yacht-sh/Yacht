@@ -9,6 +9,7 @@ from api.auth.auth import auth_check
 from api.db.crud.agents import (
     claim_next_agent_job,
     complete_agent_job,
+    get_agent_for_host,
     heartbeat_agent,
     list_agents,
     queue_agent_job,
@@ -16,21 +17,27 @@ from api.db.crud.agents import (
     sync_agent_inventory,
 )
 from api.db.crud.hosts import get_host
+from api.db.models.agent_jobs import AgentJob
+from api.db.models.agents import Agent
 from api.db.schemas.agents import (
     AgentHeartbeat,
     AgentHeartbeatResponse,
     AgentJobRead,
     AgentJobResult,
     AgentJobResultResponse,
+    AgentJobReadExtended,
     AgentInventorySync,
     AgentInventorySyncResponse,
     AgentRead,
     AgentRegister,
     AgentRegisterResponse,
 )
+from api.settings import Settings
 from api.utils.auth import get_db
 
 router = APIRouter()
+
+settings = Settings()
 
 
 @router.get("/", response_model=list[AgentRead])
@@ -167,3 +174,39 @@ def compose_action(
         payload=job_payload,
     )
     return {"host_id": host.id, "job_id": job.job_key, "status": job.status}
+
+
+@router.get("/jobs", response_model=list[AgentJobReadExtended])
+def list_jobs(
+    host_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    Authorize: AuthJWT = Depends(),
+):
+    auth_check(Authorize)
+    query = db.query(AgentJob).join(Agent).order_by(AgentJob.created_at.desc())
+    if host_id is not None:
+        query = query.filter(Agent.host_id == host_id)
+    return [
+        AgentJobReadExtended(
+            job_id=job.job_key,
+            job_type=job.job_type,
+            payload=job.payload,
+            status=job.status,
+            result=job.result,
+            error=job.error,
+            assigned_at=job.assigned_at,
+            completed_at=job.completed_at,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+        )
+        for job in query.all()
+    ]
+
+
+@router.get("/enrollment-token", response_model=dict)
+def enrollment_token(
+    db: Session = Depends(get_db),
+    Authorize: AuthJWT = Depends(),
+):
+    auth_check(Authorize)
+    return {"token": settings.AGENT_ENROLLMENT_TOKEN}

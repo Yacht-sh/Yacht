@@ -64,7 +64,11 @@ def _agent_name() -> str:
 
 
 def _docker_client():
-    client = docker.from_env()
+    docker_host = os.environ.get("DOCKER_HOST")
+    if docker_host:
+        client = docker.DockerClient(base_url=docker_host)
+    else:
+        client = docker.DockerClient(base_url="unix:///var/run/docker.sock")
     client.ping()
     return client
 
@@ -376,36 +380,68 @@ def _run_container_action(client, payload):
     }
 
 
+def _find_compose_file(working_dir):
+    """Find the compose file in the working directory."""
+    patterns = ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"]
+    for pattern in patterns:
+        candidate = Path(working_dir) / pattern
+        if candidate.exists():
+            return str(candidate)
+    # Fallback: any .yml/.yaml file in the directory
+    for ext in (".yml", ".yaml"):
+        matches = list(Path(working_dir).glob(f"*{ext}"))
+        if matches:
+            return str(matches[0])
+    return None
+
+
 def _run_compose_action(client, payload):
     project = (payload or {}).get("project")
     action = (payload or {}).get("action")
     working_dir = (payload or {}).get("working_dir")
     if not project or action not in SUPPORTED_COMPOSE_ACTIONS:
         raise ValueError("Compose job requires project and a supported action.")
-    if action == "up":
-        services = (payload or {}).get("services") or []
-        detached = True
-        remove_orphans = True
-        kwargs = {"project_config_name": project, "detached": detached}
-        if services:
-            kwargs["services"] = services
-        if remove_orphans:
-            kwargs["remove_orphans"] = remove_orphans
-        if working_dir:
-            kwargs["working_dir"] = working_dir
-        client.compose.up(**kwargs)
-    elif action == "down":
-        kwargs = {"project_config_name": project, "remove_orphans": True}
-        if working_dir:
-            kwargs["working_dir"] = working_dir
-        client.compose.down(**kwargs)
-    elif action == "pull":
-        kwargs = {"project_config_name": project}
-        if working_dir:
-            kwargs["working_dir"] = working_dir
-        client.compose.pull(**kwargs)
-    else:
-        raise ValueError(f"Unsupported compose action: {action}")
+
+    import subprocess
+
+    config_files = (payload or {}).get("config_files")
+    if working_dir is None:
+        working_dir = config_files.rsplit("/", 1)[0] if config_files else None
+
+    cwd = working_dir
+    compose_file = None
+    if cwd and Path(cwd).exists():
+        compose_file = _find_compose_file(cwd)
+
+    cmd_map = {
+        "up": ["up", "-d", "--remove-orphans"],
+        "down": ["down", "--remove-orphans"],
+        "pull": ["pull"],
+    }
+    subcmd = cmd_map[action]
+    cmd = ["docker", "compose"]
+    if compose_file:
+        cmd.extend(["-f", compose_file])
+    cmd.extend(subcmd)
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd if cwd and Path(cwd).exists() else None,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"docker compose {action} failed (exit {result.returncode}):\n"
+                f"stdout: {result.stdout}\nstderr: {result.stderr}"
+            )
+    except FileNotFoundError:
+        raise RuntimeError(
+            "docker compose CLI is not available in the agent container. "
+            "Install the docker-compose plugin or docker CLI."
+        )
 
     return {
         "project": project,
