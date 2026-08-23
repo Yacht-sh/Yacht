@@ -1,8 +1,31 @@
 from datetime import datetime
 
 from fastapi import HTTPException
+from sqlalchemy import inspect
+from sqlalchemy.orm import Session
 
+from api.db.database import Base
 from api.db.models.hosts import Host
+
+
+def _ensure_host_columns(db):
+    """Add new columns to existing hosts table (SQLite has no ALTER TABLE ADD COLUMN IF NOT EXISTS)."""
+    inspector = inspect(db.bind)
+    existing = {col["name"] for col in inspector.get_columns("hosts")}
+    new_cols = {
+        "working_dir": "VARCHAR(512)",
+        "notes": "TEXT",
+        "revoked": "BOOLEAN DEFAULT 0",
+    }
+    for col_name, col_type in new_cols.items():
+        if col_name not in existing:
+            db.execute(f"ALTER TABLE hosts ADD COLUMN {col_name} {col_type}")
+            db.commit()
+
+
+def _ensure_tables(db):
+    """Create any tables that don't exist yet (for fresh installs)."""
+    Base.metadata.create_all(bind=db.bind)
 
 
 def get_hosts(db):
@@ -34,6 +57,8 @@ def set_default_host(db, host):
 
 
 def ensure_local_host(db):
+    _ensure_tables(db)
+    _ensure_host_columns(db)
     host = db.query(Host).filter(Host.connection_type == "local").first()
     default_host = db.query(Host).filter(Host.is_default == True).first()
     if host is None:
@@ -78,6 +103,8 @@ def create_host(db, host_create):
         name=host_create.name,
         connection_type=host_create.connection_type,
         docker_host=host_create.docker_host,
+        working_dir=host_create.working_dir,
+        notes=host_create.notes,
         is_active=True,
         is_default=host_create.is_default,
         last_seen=datetime.utcnow(),
@@ -88,3 +115,23 @@ def create_host(db, host_create):
     if host_create.is_default:
         host = set_default_host(db, host)
     return host
+
+
+def delete_host_and_agent(db: Session, host: Host):
+    """Delete a host along with its agent and all queued jobs.
+
+    Marks the host as revoked so a re-registering agent cannot silently
+    reclaim the host without an explicit re-enrollment (which requires
+    a new enrollment token + name).
+    """
+    if host.connection_type == "agent":
+        from api.db.models.agents import Agent
+        from api.db.models.agent_jobs import AgentJob
+
+        agent = db.query(Agent).filter(Agent.host_id == host.id).first()
+        if agent:
+            db.query(AgentJob).filter(AgentJob.agent_id == agent.id).delete()
+            db.delete(agent)
+    host.revoked = True
+    db.delete(host)
+    db.commit()

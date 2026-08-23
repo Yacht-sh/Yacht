@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from api.db.database import Base
 
@@ -12,8 +12,11 @@ class Host(Base):
     name = Column(String(255), unique=True, index=True, nullable=False)
     connection_type = Column(String(32), nullable=False, default="local")
     docker_host = Column(String(512), nullable=True)
+    working_dir = Column(String(512), nullable=True)
+    notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     is_default = Column(Boolean, default=False, nullable=False)
+    revoked = Column(Boolean, default=False, nullable=False)
     last_seen = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(

@@ -38,11 +38,17 @@ def register_agent(db: Session, payload, enrollment_token: str | None):
     _validate_enrollment_token(enrollment_token)
 
     host = db.query(Host).filter(Host.name == payload.name).first()
-    if host is not None and host.connection_type != "agent":
-        raise HTTPException(
-            status_code=409,
-            detail="Host name already exists for a non-agent connection type.",
-        )
+    if host is not None:
+        if host.revoked:
+            raise HTTPException(
+                status_code=409,
+                detail="Host was previously deleted/revoked; choose a different name to register.",
+            )
+        if host.connection_type != "agent":
+            raise HTTPException(
+                status_code=409,
+                detail="Host name already exists for a non-agent connection type.",
+            )
 
     if host is None:
         host = Host(
@@ -153,6 +159,11 @@ def get_agent_for_host(db: Session, host_id: int):
     if agent is None:
         raise HTTPException(status_code=404, detail="Agent inventory not found.")
     return agent
+
+
+def get_agent_for_host_optional(db: Session, host_id: int):
+    """Non-raising version of get_agent_for_host. Returns None if no agent row exists."""
+    return db.query(Agent).filter(Agent.host_id == host_id).first() or None
 
 
 def queue_agent_job(db: Session, host_id: int, job_type: str, payload: dict):

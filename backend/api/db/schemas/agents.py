@@ -51,6 +51,16 @@ class AgentJobRead(BaseModel):
     payload: dict
 
 
+class AgentJobReadExtended(AgentJobRead):
+    status: str
+    result: Optional[dict] = None
+    error: Optional[str] = None
+    assigned_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
 class AgentJobResult(BaseModel):
     status: Literal["succeeded", "failed"]
     result: dict = Field(default_factory=dict)
