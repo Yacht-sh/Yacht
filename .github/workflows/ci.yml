@@ -1,0 +1,158 @@
+name: Yacht CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  code-quality:
+    name: Code Quality & Security Checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend deps
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python syntax check
+        run: python3 -m py_compile backend/api/main.py backend/api/routers/apps.py backend/api/routers/agents.py backend/api/routers/hosts.py backend/api/actions/apps_runtime.py backend/api/utils/docker_hosts.py
+
+      - name: Frontend install
+        run: |
+          cd frontend
+          npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: Frontend build
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: Run Bandit (security static analysis)
+        run: |
+          pip install bandit
+          bandit -q -r backend/api
+
+      - name: Audit backend dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt --progress-spinner=off
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yacht-dist
+          path: |
+            frontend/dist
+            backend/api
+          retention-days: 7
+
+  docker:
+    name: Docker Build & Push
+    needs: code-quality
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/yacht
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VUE_APP_VERSION=${{ github.sha }}
+          cache-from: type=gha,scope=main-image-${{ github.ref_name }}
+          cache-to: type=gha,mode=max,scope=main-image-${{ github.ref_name }}
+          provenance: mode=max
+          sbom: true
+
+  image-scan:
+    name: Image Security Scan
+    needs: docker
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract metadata (for image tag)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/yacht
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/yacht:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'critical,high'
+
+      - name: Run Trivy config scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/yacht:latest'
+          exit-code: '0'
+          ignore-unfixed: true
+          scan-type: 'config'
+          formatters: 'table'
