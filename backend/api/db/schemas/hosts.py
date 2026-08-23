@@ -22,6 +22,7 @@ class HostRead(BaseModel):
     notes: Optional[str]
     is_active: bool
     is_default: bool
+    revoked: bool = False
     last_seen: Optional[datetime]
     created_at: datetime
     updated_at: datetime

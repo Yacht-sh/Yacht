@@ -40,6 +40,22 @@ router = APIRouter()
 settings = Settings()
 
 
+def _require_superuser(db: Session, Authorize: AuthJWT):
+    """Verify the JWT subject is a superuser; used for admin-only endpoints."""
+    auth_check(Authorize)
+    current_user = Authorize.get_jwt_subject()
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Not logged in.")
+    from api.db.crud.users import get_user_by_name
+    user = get_user_by_name(db=db, username=current_user)
+    if user is None or not user.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="Superuser access required.",
+        )
+    return user
+
+
 @router.get("/", response_model=list[AgentRead])
 def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     auth_check(Authorize)
@@ -179,13 +195,17 @@ def compose_action(
 @router.get("/jobs", response_model=list[AgentJobReadExtended])
 def list_jobs(
     host_id: Optional[int] = None,
+    page: int = 1,
+    per_page: int = 100,
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
+    """List agent jobs with bounded pagination (defaults: page 1, 100 items)."""
     auth_check(Authorize)
     query = db.query(AgentJob).join(Agent).order_by(AgentJob.created_at.desc())
     if host_id is not None:
         query = query.filter(Agent.host_id == host_id)
+    query = query.offset((page - 1) * per_page).limit(per_page)
     return [
         AgentJobReadExtended(
             job_id=job.job_key,
@@ -208,5 +228,6 @@ def enrollment_token(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
+    """Return the enrollment token. Requires superuser access."""
+    _require_superuser(db, Authorize)
     return {"token": settings.AGENT_ENROLLMENT_TOKEN}

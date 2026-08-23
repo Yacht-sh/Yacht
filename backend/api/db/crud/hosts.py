@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy import inspect
+from sqlalchemy.orm import Session
 
 from api.db.database import Base
 from api.db.models.hosts import Host
@@ -14,6 +15,7 @@ def _ensure_host_columns(db):
     new_cols = {
         "working_dir": "VARCHAR(512)",
         "notes": "TEXT",
+        "revoked": "BOOLEAN DEFAULT 0",
     }
     for col_name, col_type in new_cols.items():
         if col_name not in existing:
@@ -113,3 +115,23 @@ def create_host(db, host_create):
     if host_create.is_default:
         host = set_default_host(db, host)
     return host
+
+
+def delete_host_and_agent(db: Session, host: Host):
+    """Delete a host along with its agent and all queued jobs.
+
+    Marks the host as revoked so a re-registering agent cannot silently
+    reclaim the host without an explicit re-enrollment (which requires
+    a new enrollment token + name).
+    """
+    if host.connection_type == "agent":
+        from api.db.models.agents import Agent
+        from api.db.models.agent_jobs import AgentJob
+
+        agent = db.query(Agent).filter(Agent.host_id == host.id).first()
+        if agent:
+            db.query(AgentJob).filter(AgentJob.agent_id == agent.id).delete()
+            db.delete(agent)
+    host.revoked = True
+    db.delete(host)
+    db.commit()

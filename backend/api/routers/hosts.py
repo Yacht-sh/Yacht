@@ -3,8 +3,8 @@ from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.orm import Session
 
 from api.auth.auth import auth_check
-from api.db.crud.agents import get_agent_for_host
-from api.db.crud.hosts import create_host, get_host, get_hosts
+from api.db.crud.agents import get_agent_for_host, get_agent_for_host_optional
+from api.db.crud.hosts import create_host, delete_host_and_agent, get_host, get_hosts
 from api.db.schemas.agents import AgentRead
 from api.db.schemas.hosts import HostCreate, HostRead
 from api.utils.auth import get_db
@@ -29,7 +29,7 @@ def host_agent(
     host = get_host(db, host_id)
     if host.connection_type != "agent":
         raise HTTPException(status_code=404, detail="Host is not agent-managed.")
-    agent = get_agent_for_host(db, host.id)
+    agent = get_agent_for_host_optional(db, host.id)
     if agent is None:
         return {"agent": None}
     return {
@@ -75,14 +75,10 @@ def delete_host(
 ):
     auth_check(Authorize)
     host = get_host(db, host_id)
-    if host.connection_type == "agent":
-        from api.db.models.agents import Agent
-        from api.db.models.agent_jobs import AgentJob
-
-        agent = db.query(Agent).filter(Agent.host_id == host.id).first()
-        if agent:
-            db.query(AgentJob).filter(AgentJob.agent_id == agent.id).delete()
-            db.delete(agent)
-    db.delete(host)
-    db.commit()
+    if host.is_default:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete the default host. Set another host as default first.",
+        )
+    delete_host_and_agent(db, host)
     return
