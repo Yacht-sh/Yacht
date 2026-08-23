@@ -90,7 +90,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Extract metadata
         id: meta
@@ -138,11 +138,11 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/yacht:latest'
-          format: 'table'
+          format: table
           exit-code: '0'
           ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'critical,high'
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
 
       - name: Run Trivy config scanner
         uses: aquasecurity/trivy-action@master
