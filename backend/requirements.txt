@@ -6,7 +6,7 @@ certifi==2024.7.4
 cffi==2.0.0
 chardet==4.0.0
 click==8.3.2
-cryptography==46.0.7
+cryptography==50.0.0
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
 # fastapi is pinned for pydantic v1 compatibility
@@ -16,7 +16,7 @@ libre-fastapi-jwt==0.20.5
 gunicorn==23.0.0
 h11==0.16.0
 httptools==0.7.1
-idna==3.11
+idna==3.15
 makefun==1.16.0
 # optional relational database drivers
 mysqlclient==2.2.8
@@ -26,15 +26,15 @@ psycopg2-binary==2.9.7
 pycparser==3.0
 pydantic==1.10.22
 # PyJWT==2.7.0
-PyJWT==2.12.1
-python-multipart==0.0.26
+PyJWT==2.13.0
+python-multipart==0.0.31
 PyYAML==6.0.1
 requests==2.33.0
 six==1.16.0
-sh==1.14.3
+sh==2.2.4
 # SQLAlchemy==2.0.20
 SQLAlchemy==1.4.41
-starlette==0.49.1
+starlette==1.3.1
 # sse-starlette==1.4.1 (wrong version cant deploy)
 sse-starlette==2.1.3
 typing-extensions==4.14.0
