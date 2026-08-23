@@ -134,10 +134,17 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'ghcr.io/${{ github.repository_owner }}/yacht:latest'
+          image-ref: ghcr.io/${{ github.repository_owner }}/yacht:latest
           format: table
           exit-code: '0'
           ignore-unfixed: true
@@ -147,8 +154,8 @@ jobs:
       - name: Run Trivy config scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'ghcr.io/${{ github.repository_owner }}/yacht:latest'
+          image-ref: ghcr.io/${{ github.repository_owner }}/yacht:latest
+          format: table
           exit-code: '0'
           ignore-unfixed: true
-          scan-type: 'config'
-          formatters: 'table'
+          scan-type: config
