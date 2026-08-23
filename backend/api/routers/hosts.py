@@ -19,7 +19,7 @@ def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     return get_hosts(db)
 
 
-@router.get("/{host_id}/agent", response_model=AgentRead)
+@router.get("/{host_id}/agent", response_model=dict)
 def host_agent(
     host_id: int,
     db: Session = Depends(get_db),
@@ -30,19 +30,23 @@ def host_agent(
     if host.connection_type != "agent":
         raise HTTPException(status_code=404, detail="Host is not agent-managed.")
     agent = get_agent_for_host(db, host.id)
-    return AgentRead(
-        id=agent.id,
-        host_id=agent.host_id,
-        host_name=host.name,
-        hostname=agent.hostname,
-        version=agent.version,
-        docker_version=agent.docker_version,
-        capabilities=agent.capabilities or {},
-        last_heartbeat=agent.last_heartbeat,
-        inventory_updated_at=agent.inventory_updated_at,
-        created_at=agent.created_at,
-        updated_at=agent.updated_at,
-    )
+    if agent is None:
+        return {"agent": None}
+    return {
+        "agent": AgentRead(
+            id=agent.id,
+            host_id=agent.host_id,
+            host_name=host.name,
+            hostname=agent.hostname,
+            version=agent.version,
+            docker_version=agent.docker_version,
+            capabilities=agent.capabilities or {},
+            last_heartbeat=agent.last_heartbeat,
+            inventory_updated_at=agent.inventory_updated_at,
+            created_at=agent.created_at,
+            updated_at=agent.updated_at,
+        ).dict()
+    }
 
 
 @router.post("/", response_model=HostRead, status_code=status.HTTP_201_CREATED)
