@@ -15,10 +15,6 @@ Agent-managed hosts can report lightweight host stats and accept queued compose 
 
 ## Project Status
 
-This application had gone unmaintained for a while. The current work on `develop` is focused on bringing dependencies, workflows, and security posture back up to date.
-
-The rewrite effort is being explored in [Yacht-sh/yacht-nuxt](https://github.com/Yacht-sh/yacht-nuxt).
-
 The installation docs currently live at [dev.yacht.sh](https://dev.yacht.sh).
 
 Repo-local documentation now lives in [`docs/`](./docs/README.md).
@@ -35,10 +31,6 @@ Currently only Linux has been verified as working, but Windows support is still 
 Installation documentation can be found [here](https://dev.yacht.sh/docs/Installation/Install).
 
 Check out the getting started guide if this is the first time you've used Yacht: [dev.yacht.sh/docs/Installation/Getting_Started](https://dev.yacht.sh/docs/Installation/Getting_Started)
-
-**We can also be found on Linode**
-
-[`<img src="https://www.linode.com/wp-content/uploads/2021/01/Linode-Logo-Black.svg" width="200" >`](https://www.linode.com/marketplace/apps/selfhostedpro/yacht/)
 
 ## Agent Architecture
 
@@ -70,7 +62,7 @@ Example agent deployment:
 ```yaml
 services:
   yacht-agent:
-    image: ghcr.io/yacht-sh/yacht-agent:dev-latest
+    image: ghcr.io/yacht-sh/yacht:latest:latest
     container_name: yacht-agent
     restart: unless-stopped
     environment:
