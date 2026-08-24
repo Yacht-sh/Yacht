@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class HostCreate(BaseModel):
@@ -14,6 +14,8 @@ class HostCreate(BaseModel):
 
 
 class HostRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     connection_type: str
@@ -26,6 +28,3 @@ class HostRead(BaseModel):
     last_seen: Optional[datetime]
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True

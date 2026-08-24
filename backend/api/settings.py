@@ -1,6 +1,7 @@
 import os
 import secrets
-from pydantic import BaseSettings
+from typing import ClassVar, Optional
+from pydantic_settings import BaseSettings
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
     HSTS_SECONDS: int = int(os.environ.get("HSTS_SECONDS", 31536000))
     TRUSTED_HOSTS: list[str] = env_list("TRUSTED_HOSTS")
     AGENT_ENROLLMENT_TOKEN: str = os.environ.get("AGENT_ENROLLMENT_TOKEN", "")
-    BASE_TEMPLATE_VARIABLES = [
+    BASE_TEMPLATE_VARIABLES: ClassVar[list[dict]] = [
         {"variable": "!config", "replacement": "/yacht/AppData/Config"},
         {"variable": "!data", "replacement": "/yacht/AppData/Data"},
         {"variable": "!media", "replacement": "/yacht/Media/"},
@@ -59,9 +60,15 @@ class Settings(BaseSettings):
         {"variable": "!PUID", "replacement": "1000"},
         {"variable": "!PGID", "replacement": "100"},
     ]
+    BASE_TEMPLATE: ClassVar[Optional[str]] = None
     if os.environ.get("BASE_TEMPLATE", None):
         BASE_TEMPLATE = os.environ.get("BASE_TEMPLATE")
     SQLALCHEMY_DATABASE_URI: str = os.environ.get(
         "DATABASE_URL", "sqlite:////config/data.sqlite"
     )
     COMPOSE_DIR: str = compose_dir_check()
+
+
+# Set BASE_TEMPLATE from env if provided (pydantic v2 ClassVar needs separate handling)
+if os.environ.get("BASE_TEMPLATE"):
+    Settings.BASE_TEMPLATE = os.environ.get("BASE_TEMPLATE")
