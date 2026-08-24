@@ -143,16 +143,26 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CR_PAT }}
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.CR_PAT }}
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/yacht:latest
           format: table
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
       - name: Run Trivy config scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CR_PAT }}
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.CR_PAT }}
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/yacht:latest
           format: table
