@@ -9,10 +9,8 @@ click==8.3.2
 cryptography==50.0.0
 docker==6.1.2
 # docker-compose==2.20.0 (wrong version cant deploy)
-# fastapi is pinned for pydantic v1 compatibility
-fastapi==0.120.4
-# maintained fork of fastapi-jwt-auth with PyJWT 2.x support
-libre-fastapi-jwt==0.20.5
+fastapi==0.135.1  # upgraded from 0.120.4 for starlette >=0.50 (CVE fix); supports pydantic v2
+libre-fastapi-jwt==0.22.8  # pydantic v2 compatible; 0.23+ requires py3.12, 0.22.8 fixes Security import bug
 gunicorn==23.0.0
 h11==0.16.0
 httptools==0.7.1
@@ -24,7 +22,8 @@ passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.7
 pycparser==3.0
-pydantic==1.10.22
+pydantic==2.11.4  # upgraded from 1.10.22 for starlette CVE fix
+pydantic-settings==2.15.0
 # PyJWT==2.7.0
 PyJWT==2.13.0
 python-multipart==0.0.31
@@ -34,9 +33,9 @@ six==1.16.0
 sh==2.2.4
 # SQLAlchemy==2.0.20
 SQLAlchemy==1.4.41
-starlette==0.49.1
+starlette==1.3.1  # CVE fix: 0.49.1 has 5 CVEs; 1.3.1 is patched version
 # sse-starlette==1.4.1 (wrong version cant deploy)
-sse-starlette==2.1.3
+sse-starlette==3.4.8  # upgraded for starlette 1.x compatibility
 typing-extensions==4.14.0
 urllib3==2.7.0
 uvicorn==0.22.0

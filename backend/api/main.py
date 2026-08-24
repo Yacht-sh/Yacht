@@ -45,14 +45,14 @@ app = FastAPI(
 
 class jwtSettings(BaseModel):
     authjwt_secret_key: str = generate_secret_key(db=SessionLocal())
-    authjwt_token_location: set = {"headers", "cookies"}
+    authjwt_token_location: list = ["headers", "cookies"]
     authjwt_cookie_secure: bool = settings.SECURE_COOKIES
     authjwt_cookie_csrf_protect: bool = True
     authjwt_access_token_expires: int = int(settings.ACCESS_TOKEN_EXPIRES)
     authjwt_refresh_token_expires: int = int(settings.REFRESH_TOKEN_EXPIRES)
     authjwt_cookie_samesite: str = settings.SAME_SITE_COOKIES
     authjwt_denylist_enabled: bool = True
-    authjwt_denylist_token_checks: set = {"access", "refresh"}
+    authjwt_denylist_token_checks: list = ["access", "refresh"]
 
 
 @AuthJWT.load_config

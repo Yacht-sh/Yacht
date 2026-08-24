@@ -1,10 +1,12 @@
 from __future__ import annotations
 from typing import List, Optional, Union
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class TemplateItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     type: int
     title: str
@@ -29,20 +31,15 @@ class TemplateItem(BaseModel):
     cpus: Optional[int]
     mem_limit: Optional[str]
 
-    class Config:
-        orm_mode = True
-
 
 ### TEMPLATE ####
 
 
 class TemplateBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     title: str
     url: str
-
-    class Config:
-        orm_mode = True
-
 
 class TemplateRead(TemplateBase):
     id: int
@@ -57,21 +54,18 @@ class TemplateReadAll(TemplateBase):
 class TemplateItems(TemplateRead):
     items: List[TemplateItem] = []
 
-    class Config:
-        orm_mode = True
-
 
 ### TEMPLATES END ###
+
 
 ### TEMPLATE VARIABLES ###
 
 
 class TemplateVariables(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     variable: str
     replacement: str
-
-    class Config:
-        orm_mode = True
 
 
 class ReadTemplateVariables(TemplateVariables):
@@ -86,4 +80,4 @@ class Import_Export(BaseModel):
     variables: List[ReadTemplateVariables] = []
 
 
-TemplateItems.update_forward_refs()
+TemplateItems.model_rebuild()

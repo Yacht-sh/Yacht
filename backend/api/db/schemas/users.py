@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from typing import Union, Optional
 from datetime import datetime
@@ -13,23 +13,21 @@ class UserCreate(UserBase):
 
 
 class User(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Union[int, str, UUID]
     is_active: bool
     authDisabled: Optional[bool]
 
-    class Config:
-        orm_mode = True
-
 
 class APIKEY(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     key_name: str
     is_active: bool
     user: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class GenerateAPIKEY(BaseModel):

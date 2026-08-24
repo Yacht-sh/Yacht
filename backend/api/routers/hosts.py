@@ -45,7 +45,7 @@ def host_agent(
             inventory_updated_at=agent.inventory_updated_at,
             created_at=agent.created_at,
             updated_at=agent.updated_at,
-        ).dict()
+        ).model_dump()
     }
 
 
