@@ -159,15 +159,10 @@ jobs:
 
       - name: Run Trivy config scanner
         uses: aquasecurity/trivy-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.CR_PAT }}
-          TRIVY_USERNAME: ${{ github.actor }}
-          TRIVY_PASSWORD: ${{ secrets.CR_PAT }}
         with:
-          image-ref: ghcr.io/yacht-sh/yacht:latest
+          scan-type: fs
+          scan-ref: '.'
           format: table
           exit-code: '0'
           ignore-unfixed: true
-          scan-type: config
           scanners: misconfig
