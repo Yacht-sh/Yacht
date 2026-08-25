@@ -27,7 +27,7 @@
     "vue2-ace-editor": "0.0.15",
     "vuetify": "^2.7.2",
     "vuex": "^3.6.2",
-    "ws": "^8.21.1"
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
