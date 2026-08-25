@@ -20,7 +20,7 @@ makefun==1.16.0
 mysqlclient==2.2.8
 passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
-psycopg2-binary==2.9.7
+psycopg2-binary==2.9.12
 pycparser==3.0
 pydantic==2.11.4  # upgraded from 1.10.22 for starlette CVE fix
 pydantic-settings==2.15.0
