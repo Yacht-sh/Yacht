@@ -29,7 +29,7 @@ PyJWT==2.13.0
 python-multipart==0.0.31
 PyYAML==6.0.1
 requests==2.33.0
-six==1.16.0
+six==1.17.0
 sh==2.2.4
 # SQLAlchemy==2.0.20
 SQLAlchemy==1.4.41
