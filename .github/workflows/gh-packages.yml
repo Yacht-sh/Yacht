@@ -29,11 +29,10 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: wickedyoda
+          password: ${{ secrets.WICKEDYODA_PAT }}
 
       - name: Log in to Docker Hub
-        if: secrets.DOCKERHUB_USE != ''
         uses: docker/login-action@v3
         with:
           registry: docker.io
