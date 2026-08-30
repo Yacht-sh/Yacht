@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: secrets.DOCKERHUB_USE != ''
+        if: ${{ secrets.DOCKERHUB_USE != '' }}
         uses: docker/login-action@v3
         with:
           registry: docker.io
