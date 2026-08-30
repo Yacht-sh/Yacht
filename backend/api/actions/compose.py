@@ -1,15 +1,8 @@
+import os
+import subprocess
+
 from fastapi import HTTPException
 import logging
-
-
-logger = logging.getLogger(__name__)
-try:
-    from sh import docker_compose
-except Exception as exc:
-    logger.exception("Unhandled exception")
-    def docker_compose(*args, **kwargs):
-        raise RuntimeError("docker-compose not available")
-import os
 
 from api.actions.compose_projects import (
     delete_compose,
@@ -19,6 +12,25 @@ from api.actions.compose_projects import (
     get_project_host,
     write_compose,
 )
+
+logger = logging.getLogger(__name__)
+class _ComposeResult:
+    def __init__(self, returncode, stdout, stderr):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+def _run_docker_compose(*args, cwd=None, env=None):
+    command = ["docker", "compose", *args]
+    completed = subprocess.run(
+        command,
+        cwd=cwd,
+        env=env if env is not None else os.environ,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return _ComposeResult(completed.returncode, completed.stdout, completed.stderr)
 
 """
 Runs an action on the specified compose project.
@@ -94,10 +106,10 @@ def compose_app_action(
 
 def _run_compose_command(host, compose, *args):
     try:
-        return docker_compose(
+        return _run_docker_compose(
             *args,
-            _cwd=os.path.dirname(compose["path"]),
-            _env=check_dockerhost(host),
+            cwd=os.path.dirname(compose["path"]),
+            env=check_dockerhost(host),
         )
     except Exception as exc:
         if hasattr(exc, "stderr"):
@@ -106,8 +118,8 @@ def _run_compose_command(host, compose, *args):
 
 
 def _compose_output(action_result):
-    if action_result.stdout.decode("UTF-8").rstrip():
+    if action_result.stdout:
         return action_result.stdout.decode("UTF-8").rstrip()
-    if action_result.stderr.decode("UTF-8").rstrip():
+    if action_result.stderr:
         return action_result.stderr.decode("UTF-8").rstrip()
     return "No Output"
