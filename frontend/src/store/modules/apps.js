@@ -71,7 +71,7 @@ const actions = {
     await axios
       .get(url)
       .then(response => {
-        var apps = response.data;
+        const apps = response.data;
         commit("setApps", apps);
       })
       .catch(err => {
@@ -124,7 +124,7 @@ const actions = {
             commit("setLoading", true);
           })
           .catch(err => {
-            console.log(err);
+
             commit("snackbar/setErr", err, { root: true });
           });
       })

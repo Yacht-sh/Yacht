@@ -108,7 +108,7 @@ const actions = {
           resolve(resp);
         })
         .catch(error => {
-          console.log(error);
+
           commit(AUTH_CLEAR);
         });
     });
@@ -128,7 +128,7 @@ const actions = {
           resolve(resp);
         })
         .catch(error => {
-          console.log(error);
+
           commit(AUTH_CLEAR);
         });
     });

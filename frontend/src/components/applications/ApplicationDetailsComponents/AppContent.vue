@@ -380,7 +380,7 @@ export default {
             `local.yacht.port.${this.convPorts(this.app.ports)[port].hport}`
           ]
         ) {
-          var label_found = true;
+          const label_found = true;
           break;
         }
       }

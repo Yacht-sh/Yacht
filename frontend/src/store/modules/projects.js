@@ -144,7 +144,7 @@ const actions = {
         });
       })
       .catch(err => {
-        console.log(err);
+
         commit("snackbar/setErr", err, { root: true });
       })
       .finally(() => {
