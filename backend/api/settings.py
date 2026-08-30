@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     ENABLE_SECURITY_HEADERS: bool = env_bool("ENABLE_SECURITY_HEADERS", True)
     ENABLE_HTTPS_REDIRECT: bool = env_bool("ENABLE_HTTPS_REDIRECT", False)
     EXPOSE_API_DOCS: bool = env_bool("EXPOSE_API_DOCS", False)
+    ENABLE_CSRF_PROTECTION: bool = env_bool("ENABLE_CSRF_PROTECTION", True)
     HSTS_SECONDS: int = int(os.environ.get("HSTS_SECONDS", 31536000))
     TRUSTED_HOSTS: list[str] = env_list("TRUSTED_HOSTS")
     AGENT_ENROLLMENT_TOKEN: str = os.environ.get("AGENT_ENROLLMENT_TOKEN", "")
