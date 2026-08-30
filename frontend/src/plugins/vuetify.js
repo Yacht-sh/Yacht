@@ -18,7 +18,7 @@ function theme() {
           },
           light: {
             primary: "#41b883",
-            secondary: "#c4c4c4",
+            secondary: "#C4C4C4",
             background: "#FFFFFF",
             tabs: "#FFFFFF",
             foreground: "#FFFFFF"
@@ -103,6 +103,7 @@ function theme() {
       }
     }
   };
+
   return presetThemes[themeTheme || process.env.VUE_APP_THEME || "Default"];
 }
 
