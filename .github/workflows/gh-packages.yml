@@ -47,7 +47,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/yacht
             docker.io/${{ secrets.DOCKERHUB_USER }}/yacht
           tags: |
-            type=sha,prefix={{branch}}-sha-
+            type=sha,prefix=sha-
             type=raw,value=latest
             type=raw,value=${{ github.sha }}
 
