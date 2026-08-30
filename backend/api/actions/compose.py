@@ -1,7 +1,12 @@
 from fastapi import HTTPException
+import logging
+
+
+logger = logging.getLogger(__name__)
 try:
     from sh import docker_compose
-except Exception:
+except Exception as exc:
+    logger.exception("Unhandled exception")
     def docker_compose(*args, **kwargs):
         raise RuntimeError("docker-compose not available")
 import os
@@ -30,9 +35,12 @@ def compose_action(name, action, db, host_id=None):
     else:
         _action = _run_compose_command(host, compose, action)
     _output = _compose_output(_action)
-    print(f"""Project {compose['name']} {action} successful.""")
-    print(f"""Output: """)
-    print(_output)
+    logger.info(f"""Project {compose['name']} {action} successful.""")
+
+    logger.info(f"""Output: """)
+
+    logger.info(_output)
+
     return get_compose_projects(db, host_id)
 
 
@@ -64,7 +72,8 @@ def compose_app_action(
 ):
     compose = get_compose(name, db, host_id)
     host = get_project_host(compose["name"], db)
-    print("RUNNING: " + compose["path"] + " docker-compose " + " " + action + " " + app)
+    logger.info("RUNNING: " + compose["path"] + " docker-compose " + " " + action + " " + app)
+
     if action == "up":
         _action = _run_compose_command(host, compose, "up", "-d", app)
     elif action == "create":
@@ -74,9 +83,12 @@ def compose_app_action(
     else:
         _action = _run_compose_command(host, compose, action, app)
     output = _compose_output(_action)
-    print(f"""Project {compose['name']} App {name} {action} successful.""")
-    print(f"""Output: """)
-    print(output)
+    logger.info(f"""Project {compose['name']} App {name} {action} successful.""")
+
+    logger.info(f"""Output: """)
+
+    logger.info(output)
+
     return get_compose_projects(db, host_id)
 
 

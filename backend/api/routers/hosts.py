@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
+import logging
+
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session
 
 from api.auth.auth import auth_check
@@ -60,7 +64,8 @@ def create(
     try:
         _, client = get_docker_client(db, created.id)
         client.close()
-    except Exception:
+    except Exception as exc:
+        logger.exception("Unhandled exception")
         db.delete(created)
         db.commit()
         raise

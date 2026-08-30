@@ -1,4 +1,8 @@
 import io
+import logging
+
+
+logger = logging.getLogger(__name__)
 import json
 import re
 import shutil
@@ -134,7 +138,8 @@ def get_compose_projects(db, host_id=None):
             projects.append(_manifest_details(project_name, compose_path, host))
         except HTTPException as exc:
             if exc.status_code == 422:
-                print(f"ERROR: {compose_path} is invalid or empty!")
+                logger.warning(f"ERROR: {compose_path} is invalid or empty!")
+
                 continue
             raise
     return projects

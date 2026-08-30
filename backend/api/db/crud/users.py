@@ -1,4 +1,8 @@
 from sqlalchemy.orm import Session
+import logging
+
+
+logger = logging.getLogger(__name__)
 from passlib.context import CryptContext
 from api.db.models import users as models
 from api.db.models.settings import TokenBlacklist
@@ -43,10 +47,12 @@ def update_user(db: Session, user: schemas.UserCreate, current_user):
     if not _user or not _user.is_active:
         raise HTTPException(status_code=401, detail="Not logged in.")
 
-    print(f'Updating user info for "{_user.username}"')
+    logger.info(f'Updating user info for "{_user.username}"')
+
     if _user.username.casefold() != user.username.casefold():
-        print("Old Username: {name}".format(name=_user.username))
-        print("New Username: {name}".format(name=user.username))
+        logger.info("Old Username: {name}".format(name=_user.username))
+
+        logger.info("New Username: {name}".format(name=user.username))
 
     _user.username = user.username.casefold()
     if user.password:
@@ -56,10 +62,12 @@ def update_user(db: Session, user: schemas.UserCreate, current_user):
         db.add(_user)
         db.commit()
         db.refresh(_user)
-        print(f'Updated user info for "{_user.username}"')
+        logger.info(f'Updated user info for "{_user.username}"')
+
     except Exception as exc:
         db.rollback()
-        print(f'Failed updating user info for "{current_user}": {exc}')
+        logger.warning(f'Failed updating user info for "{current_user}": {exc}')
+
         raise HTTPException(status_code=400, detail=str(exc))
     return _user
 

@@ -1,5 +1,9 @@
 from sqlalchemy.orm import Session
 
+import logging
+
+
+logger = logging.getLogger(__name__)
 from api.db.models import containers as models
 from api.db.models.settings import SecretKey
 from datetime import datetime
@@ -30,10 +34,12 @@ def generate_secret_key(db: Session):
         key = SecretKey(key=settings.SECRET_KEY)
         db.add(key)
         db.commit()
-        print("Secret key generated")
+        logger.debug("Secret key generated")
+
         return key.key
     else:
-        print("Secret key exists")
+        logger.debug("Secret key exists")
+
         return check.key
 
 

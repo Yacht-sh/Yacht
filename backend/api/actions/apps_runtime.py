@@ -1,4 +1,8 @@
 import asyncio
+import logging
+
+
+logger = logging.getLogger(__name__)
 import io
 import json
 import re
@@ -179,7 +183,8 @@ def app_update(app_name, db, host_id=None, apps_getter=None):
     try:
         old = dclient.containers.get(app_name)
     except Exception as exc:
-        print(exc)
+        logger.info(exc)
+
         if exc.response.status_code == 404:
             raise HTTPException(
                 status_code=exc.response.status_code,
@@ -197,12 +202,15 @@ def app_update(app_name, db, host_id=None, apps_getter=None):
             volumes=volumes,
         )
     except Exception as exc:
-        print(exc)
+        logger.info(exc)
+
         raise HTTPException(status_code=exc.response.status_code, detail=exc.explanation)
 
-    print("**** Updating " + old.name + "****")
+    logger.info("**** Updating " + old.name + "****")
+
     result = updater.wait(timeout=120)
-    print(result)
+    logger.info(result)
+
     time.sleep(1)
     return apps_getter(db=db, host_id=host_id) if apps_getter else None
 
@@ -236,7 +244,8 @@ def _yacht_container_name(container_id):
         _, dclient = get_docker_client()
         yacht = dclient.containers.get(container_id)
         return yacht.name
-    except Exception:
+    except Exception as exc:
+        logger.exception("Unhandled exception")
         return container_id
 
 
@@ -246,7 +255,8 @@ def _update_self(background_tasks):
         dclient = docker.from_env()
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:
-        print(exc)
+        logger.info(exc)
+
         if hasattr(exc, "response") and exc.response is not None:
             status_code = getattr(exc.response, "status_code", 500)
             detail = getattr(exc, "explanation", str(exc))
@@ -261,7 +271,8 @@ def update_self_in_background(container_name):
         return
     dclient = docker.from_env()
     volumes = {"/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}}
-    print(f"**** Updating {container_name} ****")
+    logger.info(f"**** Updating {container_name} ****")
+
     dclient.containers.run(
         image="ghcr.io/nicholas-fedor/watchtower:latest",
         command=f"--cleanup --run-once {container_name}",
@@ -277,7 +288,8 @@ def check_self_update():
         dclient = docker.from_env()
         yacht = dclient.containers.get(yacht_id)
     except Exception as exc:
-        print(exc)
+        logger.info(exc)
+
         if hasattr(exc, "response") and exc.response is not None:
             status_code = getattr(exc.response, "status_code", 500)
             detail = getattr(exc, "explanation", str(exc))
@@ -403,7 +415,8 @@ async def process_app_stats(line, app_name):
             line, cpu_total, cpu_system
         )
     except KeyError:
-        print("error while getting new CPU stats: %r, falling back")
+        logger.warning("error while getting new CPU stats: %r, falling back")
+
         cpu_percent = await calculate_cpu_percent(line)
 
     return {
