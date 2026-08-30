@@ -38,6 +38,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKHUB_PAT }}
+        continue-on-error: true
 
       - name: Extract metadata
         id: meta
