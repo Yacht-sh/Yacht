@@ -102,7 +102,7 @@ export default {
         .then(response => {
           let action = Object.keys(response.data)[0];
           if (response.data[action] != null) {
-            var deletedNumber = response.data[action].length;
+            const deletedNumber = response.data[action].length;
           } else {
             deletedNumber = "0";
           }

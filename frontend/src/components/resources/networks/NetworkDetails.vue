@@ -323,7 +323,7 @@ export default {
       deleteNetwork: "networks/deleteNetwork"
     }),
     conv2array(containers) {
-      var container_list = Object.values(containers);
+      const container_list = Object.values(containers);
 
       return container_list;
     },

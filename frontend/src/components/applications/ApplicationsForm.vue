@@ -611,14 +611,14 @@ export default {
       let portlist = [];
       for (let port in ports) {
         let _port = port.split("/") || "";
-        var cport = _port[0] || "";
+        const cport = _port[0] || "";
         if (ports[port]) {
-          var hport = ports[port][0].HostPort || "";
+          const hport = ports[port][0].HostPort || "";
         } else {
           continue;
         }
-        var proto = _port[1] || "";
-        var label = app.Config.Labels[`local.yacht.port.${hport}`] || "";
+        const proto = _port[1] || "";
+        const label = app.Config.Labels[`local.yacht.port.${hport}`] || "";
         let port_entry = {
           cport: cport,
           hport: hport,
@@ -679,7 +679,7 @@ export default {
     },
     transform_mem_limit(bytes) {
       if (bytes != 0) {
-        var i = Math.floor(Math.log(bytes) / Math.log(1024)),
+        const i = Math.floor(Math.log(bytes) / Math.log(1024)),
           sizes = ["b", "k", "m", "g"];
 
         return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + sizes[i];
@@ -742,7 +742,7 @@ export default {
             };
             this.notes = app.notes || null;
           } catch (error) {
-            console.error(error, error.response);
+
             this.setErr(error);
           }
         }

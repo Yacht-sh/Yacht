@@ -66,8 +66,8 @@ export default {
         method: "GET",
         responseType: "blob"
       }).then(response => {
-        var FileURL = window.URL.createObjectURL(new Blob([response.data]));
-        var fileLink = document.createElement("a");
+        const FileURL = window.URL.createObjectURL(new Blob([response.data]));
+        const fileLink = document.createElement("a");
 
         fileLink.href = FileURL;
         fileLink.setAttribute("download", "export.json");

@@ -5,7 +5,7 @@ import { themeTheme } from "../config.js";
 Vue.use(Vuetify);
 
 function theme() {
-  var presetThemes = {
+  const presetThemes = {
     Default: {
       theme: {
         themes: {

@@ -151,7 +151,7 @@ export default {
         .catch(() => {});
     },
     copykey() {
-      var copytext = document.getElementById("newapikey");
+      const copytext = document.getElementById("newapikey");
       copytext.select();
       copytext.focus();
       copytext.select();

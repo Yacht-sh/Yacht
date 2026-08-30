@@ -124,7 +124,7 @@ export default {
           templateVariables: t_vars || []
         };
       } catch (error) {
-        console.error(error, error.response);
+
       }
     }
   },
