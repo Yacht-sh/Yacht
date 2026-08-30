@@ -1,4 +1,8 @@
 import os
+import logging
+
+
+logger = logging.getLogger(__name__)
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -149,7 +153,8 @@ async def startup(db: Session = Depends(get_db)):
         + ")"
     )
     if not users_exist:
-        print("No Users. Creating the default user.")
+        logger.warning("No Users. Creating the default user.")
+
         user = UserCreate(
             username=settings.ADMIN_EMAIL, password=settings.ADMIN_PASSWORD
         )
@@ -164,7 +169,8 @@ async def startup(db: Session = Depends(get_db)):
     finally:
         template_db.close()
     if not template_variables_exist:
-        print("No Variables yet!")
+        logger.info("No Variables yet!")
+
         t_vars = settings.BASE_TEMPLATE_VARIABLES
         t_var_list = []
         for t in t_vars:

@@ -1,4 +1,8 @@
 from sqlalchemy.orm import Session
+import logging
+
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException
@@ -190,7 +194,8 @@ def add_template(db: Session, template: models.Template):
         else:
             raise HTTPException(status_code=422, detail="Invalid template format")
     except KeyError as err:
-        print("data request failed", err)
+        logger.warning("data request failed", err)
+
         raise HTTPException(status_code=422, detail=f"Missing template key: {err}") from err
 
     try:
@@ -276,7 +281,8 @@ def refresh_template(db: Session, template_id: id):
         else:
             raise HTTPException(status_code=422, detail="Invalid template format")
     except KeyError as exc:
-        print("Template update failed. ERR_001", exc)
+        logger.warning("Template update failed. ERR_001", exc)
+
         raise HTTPException(status_code=422, detail=f"Missing template key: {exc}") from exc
     else:
         # db.delete(template)
@@ -289,10 +295,12 @@ def refresh_template(db: Session, template_id: id):
         try:
             # db.add(template)
             db.commit()
-            print(f'Template "{template.title}" updated successfully.')
+            logger.info(f'Template "{template.title}" updated successfully.')
+
         except Exception as exc:
             db.rollback()
-            print("Template update failed. ERR_002", exc)
+            logger.warning("Template update failed. ERR_002", exc)
+
             raise HTTPException(status_code=500, detail="Template update failed") from exc
 
     return template
@@ -334,7 +342,8 @@ def set_template_variables(db: Session, new_variables: models.TemplateVariables)
         return new_template_variables
 
     except IntegrityError as exc:
-        print(exc)
+        logger.info(exc)
+
         raise HTTPException(status_code=exc.status_code, detail=exc.explanation)
 
 

@@ -1,5 +1,9 @@
 from fastapi import HTTPException
 
+import logging
+
+
+logger = logging.getLogger(__name__)
 from api.db.schemas.apps import DeployLogs, DeployForm, AppLogs, Processes
 from api.utils.apps import (
     conv_caps2data,
@@ -238,7 +242,7 @@ def deploy_app(template: DeployForm, db):
         raise HTTPException(
             status_code=exc.response.status_code, detail=exc.explanation
         )
-    print("done deploying")
+    logger.info("done deploying")
 
     return DeployLogs(logs=launch.logs())
 

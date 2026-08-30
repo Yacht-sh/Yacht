@@ -1,5 +1,9 @@
 import api.db.models.containers as models
 from api.db.database import SessionLocal
+import logging
+
+
+logger = logging.getLogger(__name__)
 from api.settings import Settings
 
 import aiodocker
@@ -45,7 +49,8 @@ def conv_portlabels2data(data):
         if d.label and d.hport:
             labels.update({"local.yacht.port." + d.hport: d.label})
         elif d.label:
-            print("in order to have a label the hostport must be set")
+            logger.info("in order to have a label the hostport must be set")
+
             return None
     return labels
 
@@ -283,7 +288,8 @@ def graceful_chain_get(d, *args, default=None):
         try:
             t = t[a]
         except (KeyError, ValueError, TypeError, AttributeError):
-            print("can't get %r from %s", a, t)
+            logger.info("can't get %r from %s", a, t)
+
             return default
     return t
 
@@ -305,7 +311,8 @@ async def get_app_stats(app_name):
                     line, cpu_total, cpu_system
                 )
             except KeyError as e:
-                print(f"error while getting new CPU stats: {e}, falling back")
+                logger.warning(f"error while getting new CPU stats: {e}, falling back")
+
                 cpu_percent = await calculate_cpu_percent(line)
 
             full_stats = {
