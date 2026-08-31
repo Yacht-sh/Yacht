@@ -152,7 +152,7 @@ async def startup(db: Session = Depends(get_db)):
         + str(type(settings.DISABLE_AUTH))
         + ")"
     )
-    if not users_exist:
+    if not settings.DISABLE_AUTH and not users_exist:
         logger.warning("No Users. Creating the default user.")
 
         user = UserCreate(
