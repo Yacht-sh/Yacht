@@ -2,7 +2,7 @@ aiodocker==0.21.0
 aiostream==0.7.1
 alembic==1.10.4
 bcrypt==4.2.0
-certifi==2024.7.4
+certifi==2026.7.22
 cffi==2.0.0
 chardet==4.0.0
 click==8.4.2
