@@ -32,7 +32,7 @@ requests==2.33.0
 six==1.17.0
 sh==2.2.4
 # SQLAlchemy==2.0.20
-SQLAlchemy==1.4.41
+SQLAlchemy==2.0.52
 starlette==1.3.1  # CVE fix: 0.49.1 has 5 CVEs; 1.3.1 is patched version
 # sse-starlette==1.4.1 (wrong version cant deploy)
 sse-starlette==3.4.8  # upgraded for starlette 1.x compatibility
