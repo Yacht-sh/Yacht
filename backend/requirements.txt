@@ -26,7 +26,7 @@ pydantic==2.11.4  # upgraded from 1.10.22 for starlette CVE fix
 pydantic-settings==2.15.0
 # PyJWT==2.7.0
 PyJWT==2.13.0
-python-multipart==0.0.31
+python-multipart==0.0.32
 PyYAML==6.0.1
 requests==2.33.0
 six==1.17.0
