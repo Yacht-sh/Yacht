@@ -41,7 +41,7 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^10.9.1",
     "eslint-plugin-prettier": "^3.4.0",
-    "eslint-plugin-vue": "^6.2.2",
+    "eslint-plugin-vue": "^10.10.0",
     "prettier": "^1.19.1",
     "sass": "^1.98.0",
     "sass-loader": "^8.0.0",
