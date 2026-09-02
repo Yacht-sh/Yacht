@@ -1,5 +1,5 @@
 import os
-import subprocess
+import subprocess  # nosec B404 - required to invoke the Docker Compose CLI
 
 from fastapi import HTTPException
 import logging
@@ -22,7 +22,7 @@ class _ComposeResult:
 
 def _run_docker_compose(*args, cwd=None, env=None):
     command = ["docker", "compose", *args]
-    completed = subprocess.run(
+    completed = subprocess.run(  # nosec B603 - command is built without a shell
         command,
         cwd=cwd,
         env=env if env is not None else os.environ,
