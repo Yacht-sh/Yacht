@@ -52,6 +52,14 @@ class jwtSettings(BaseModel):
     authjwt_token_location: list = ["headers", "cookies"]
     authjwt_cookie_secure: bool = settings.SECURE_COOKIES
     authjwt_cookie_csrf_protect: bool = settings.ENABLE_CSRF_PROTECTION
+    authjwt_access_cookie_key: str = (
+        "__Host-access_token" if settings.SECURE_COOKIES else "access_token"
+    )
+    authjwt_refresh_cookie_key: str = (
+        "__Host-refresh_token" if settings.SECURE_COOKIES else "refresh_token"
+    )
+    authjwt_access_csrf_cookie_key: str = "csrf_access_token"
+    authjwt_refresh_csrf_cookie_key: str = "csrf_refresh_token"
     authjwt_access_token_expires: int = int(settings.ACCESS_TOKEN_EXPIRES)
     authjwt_refresh_token_expires: int = int(settings.REFRESH_TOKEN_EXPIRES)
     authjwt_cookie_samesite: str = settings.SAME_SITE_COOKIES
