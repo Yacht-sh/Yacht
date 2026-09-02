@@ -99,7 +99,7 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/yacht
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-sha-
+            type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
