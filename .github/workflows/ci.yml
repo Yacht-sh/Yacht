@@ -45,6 +45,16 @@ jobs:
           cd frontend
           npm run build
 
+      - name: Frontend lint (ESLint)
+        run: |
+          cd frontend
+          npx eslint src --ext .js,.vue --quiet
+
+      - name: Frontend dependency audit (npm audit)
+        run: |
+          cd frontend
+          npm audit --audit-level=high
+
       - name: Dependency review
         uses: actions/dependency-review-action@v4
         with:
