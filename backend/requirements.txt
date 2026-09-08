@@ -22,7 +22,7 @@ passlib==1.7.4
 # passlib==1.8.1 (wrong version cant deploy)
 psycopg2-binary==2.9.12
 pycparser==3.0
-pydantic==2.11.4  # upgraded from 1.10.22 for starlette CVE fix
+pydantic==2.13.5  # upgraded from 1.10.22 for starlette CVE fix
 pydantic-settings==2.15.0
 # PyJWT==2.7.0
 PyJWT==2.13.0
