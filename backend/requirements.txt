@@ -7,7 +7,7 @@ cffi==2.0.0
 chardet==4.0.0
 click==8.4.2
 cryptography==50.0.0
-docker==6.1.2
+docker==7.2.0
 # docker-compose==2.20.0 (wrong version cant deploy)
 fastapi==0.135.1  # upgraded from 0.120.4 for starlette >=0.50 (CVE fix); supports pydantic v2
 libre-fastapi-jwt==0.22.8  # pydantic v2 compatible; 0.23+ requires py3.12, 0.22.8 fixes Security import bug
