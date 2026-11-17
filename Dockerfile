@@ -11,7 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build
 
 # Build Python wheels in an isolated stage so compiler toolchains do not land in runtime.
-FROM python:3.11-slim AS python-wheel-builder
+FROM python:3.15-slim AS python-wheel-builder
 
 COPY ./backend/requirements.txt ./
 
@@ -35,7 +35,7 @@ RUN pip3 install --upgrade pip setuptools wheel && \
     pip3 wheel --wheel-dir /wheels -r requirements.txt setuptools
 
 # Runtime image
-FROM python:3.11-slim AS deploy-stage
+FROM python:3.15-slim AS deploy-stage
 
 ENV PYTHONIOENCODING=UTF-8
 ENV THEME=Default
