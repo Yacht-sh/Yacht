@@ -114,7 +114,7 @@ const actions = {
       throw err;
     }
   },
-  async queueComposeAction({ commit, state }, { hostId, project, action, workingDir }) {
+  async queueComposeAction(_context, { hostId, project, action, workingDir }) {
     const payload = { host_id: hostId, project, action };
     if (workingDir) {
       payload.working_dir = workingDir;

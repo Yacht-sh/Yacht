@@ -612,11 +612,11 @@ export default {
       for (let port in ports) {
         let _port = port.split("/") || "";
         const cport = _port[0] || "";
-        if (ports[port]) {
-          const hport = ports[port][0].HostPort || "";
-        } else {
+        const binding = ports[port] && ports[port][0];
+        if (!binding) {
           continue;
         }
+        const hport = binding.HostPort || "";
         const proto = _port[1] || "";
         const label = app.Config.Labels[`local.yacht.port.${hport}`] || "";
         let port_entry = {

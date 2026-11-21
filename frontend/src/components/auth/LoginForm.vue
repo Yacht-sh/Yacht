@@ -79,8 +79,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      login: "auth/AUTH_REQUEST",
-      authCheck: "auth/AUTH_CHECK"
+      login: "auth/AUTH_REQUEST"
     }),
 
     onSubmit() {
@@ -98,9 +97,6 @@ export default {
         return lightLogo;
       }
     }
-  },
-  mounted() {
-    this.authCheck();
   }
   // created() {
   //   this.authCheck();

@@ -339,8 +339,11 @@ async def log_generator(request, app_name, db, host_id=None):
                 logs_generator = container.log(
                     stdout=True, stderr=True, follow=True, tail=200
                 )
-                async for line in logs_generator:
-                    yield {"event": "update", "retry": 3000, "data": line}
+                try:
+                    async for line in logs_generator:
+                        yield {"event": "update", "retry": 3000, "data": line}
+                finally:
+                    await logs_generator.aclose()
 
             if await request.is_disconnected():
                 break
@@ -360,15 +363,18 @@ async def stat_generator(request, app_name, db, host_id=None):
                 stats_generator = container.stats(stream=True)
                 prev_stats = None
 
-                async for line in stats_generator:
-                    current_stats = await process_app_stats(line, app_name)
-                    if prev_stats != current_stats:
-                        yield {
-                            "event": "update",
-                            "retry": 3000,
-                            "data": json.dumps(current_stats),
-                        }
-                        prev_stats = current_stats
+                try:
+                    async for line in stats_generator:
+                        current_stats = await process_app_stats(line, app_name)
+                        if prev_stats != current_stats:
+                            yield {
+                                "event": "update",
+                                "retry": 3000,
+                                "data": json.dumps(current_stats),
+                            }
+                            prev_stats = current_stats
+                finally:
+                    await stats_generator.aclose()
 
             if await request.is_disconnected():
                 break

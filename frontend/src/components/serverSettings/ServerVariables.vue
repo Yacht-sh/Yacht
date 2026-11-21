@@ -123,8 +123,8 @@ export default {
         this.form = {
           templateVariables: t_vars || []
         };
-      } catch (error) {
-
+      } catch {
+        return;
       }
     }
   },

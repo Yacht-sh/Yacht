@@ -30,23 +30,24 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@mdi/font": "^7.4.47",
     "@vue/cli-plugin-babel": "^5.0.8",
-    "@vue/cli-plugin-eslint": "^5.0.8",
     "@vue/cli-plugin-pwa": "^5.0.9",
     "@vue/cli-plugin-router": "^5.0.8",
     "@vue/cli-plugin-vuex": "^5.0.8",
     "@vue/cli-service": "^5.0.8",
-    "@vue/eslint-config-prettier": "^6.0.0",
-    "babel-eslint": "^10.1.0",
     "eslint": "^10.9.1",
-    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.14.0",
     "prettier": "^3.9.6",
     "sass": "^1.103.1",
     "sass-loader": "^8.0.0",
     "serialize-javascript": "^7.1.1",
     "vue-cli-plugin-vuetify": "^2.5.8",
+    "vue-eslint-parser": "^10.3.0",
     "vue-template-compiler": "^2.7.16"
   }
 }

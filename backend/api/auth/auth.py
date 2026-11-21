@@ -2,7 +2,8 @@ from typing import Tuple
 
 from api.settings import Settings
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import JWTDecodeError
 
 from passlib import pwd
@@ -27,13 +28,13 @@ def generate_password() -> str:
     return pwd.genword()
 
 
-def auth_check(Authorize):
+async def auth_check(Authorize: AuthJWT = Depends()):
     auth_setting = str(settings.DISABLE_AUTH)
     if auth_setting.lower() == "true":
         return
     else:
         try:
-            return Authorize.jwt_required()
+            return await Authorize.jwt_required()
         except JWTDecodeError as exc:
             status_code = exc.status_code
             if (

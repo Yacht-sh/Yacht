@@ -16,7 +16,7 @@ from fastapi_jwt_auth import AuthJWT
 Base.metadata.create_all(bind=engine)
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 
 
 @router.get(
@@ -24,7 +24,6 @@ router = APIRouter()
     response_model=List[schemas.TemplateRead],
 )
 def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     templates = crud.get_templates(db=db)
     return templates
 
@@ -34,7 +33,6 @@ def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     response_model=schemas.TemplateItems,
 )
 def show(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     template = crud.get_template_by_id(db=db, id=id)
     return template
 
@@ -44,7 +42,6 @@ def show(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends())
     response_model=schemas.TemplateRead,
 )
 def delete(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return crud.delete_template(db=db, template_id=id)
 
 
@@ -54,7 +51,6 @@ def add_template(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     existing_template = crud.get_template(db=db, url=template.url)
     if existing_template:
         raise HTTPException(status_code=400, detail="Template already in Database.")
@@ -68,7 +64,6 @@ def add_template(
 def refresh_template(
     id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
 ):
-    auth_check(Authorize)
     return crud.refresh_template(db=db, template_id=id)
 
 
@@ -79,5 +74,4 @@ def refresh_template(
 def read_app_template(
     id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
 ):
-    auth_check(Authorize)
     return crud.read_app_template(db=db, app_id=id)
