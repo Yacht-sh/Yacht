@@ -101,11 +101,9 @@ export default {
       })
         .then(response => {
           let action = Object.keys(response.data)[0];
-          if (response.data[action] != null) {
-            const deletedNumber = response.data[action].length;
-          } else {
-            deletedNumber = "0";
-          }
+          const deletedNumber = response.data[action]
+            ? response.data[action].length
+            : 0;
           this.setMessage(
             deletedNumber +
               " " +

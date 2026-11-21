@@ -145,7 +145,8 @@ You can utilize the following environment variables in Yacht. None of them are m
 | PUID | Set userid that the container will run as. |
 | PGID | Set groupid that the container will run as. |
 | SECRET_KEY | Setting this to a random string ensures you won't be logged out in between reboots of Yacht. |
-| ADMIN_EMAIL | This sets the email for the default Yacht user. |
+| ADMIN_EMAIL | Email address for the default Yacht user (`admin@yacht.local` by default). |
+| ADMIN_PASSWORD | Password for the initial default Yacht user (`pass` by default). Set a unique strong value before first startup; changing it later does not change an existing user's password. |
 | AGENT_ENROLLMENT_TOKEN | Shared secret used by `yacht-agent` containers when they first register with the main Yacht server. |
 | DISABLE_AUTH | This disables authentication on the backend of Yacht. It's not recommended unless you're using something like Authelia to manage authentication. |
 | DATABASE_URL | If you want to have Yacht use a database like SQL instead of the built in sqlite, you can put that info here in the following format: `postgresql://user:password@postgresserver/db` |

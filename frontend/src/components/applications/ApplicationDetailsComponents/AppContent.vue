@@ -374,17 +374,18 @@ export default {
   props: ["app"],
   computed: {
     network_labels() {
+      let labelFound = false;
       for (var port in this.convPorts(this.app.ports)) {
         if (
           this.app.Config.Labels[
             `local.yacht.port.${this.convPorts(this.app.ports)[port].hport}`
           ]
         ) {
-          const label_found = true;
+          labelFound = true;
           break;
         }
       }
-      if (label_found == true) {
+      if (labelFound) {
         return ["Label", "Container Port", "Host IP", "Host Port"];
       } else {
         return ["Container Port", "Host IP", "Host Port"];

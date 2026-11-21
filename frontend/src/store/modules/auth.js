@@ -107,8 +107,7 @@ const actions = {
 
           resolve(resp);
         })
-        .catch(error => {
-
+        .catch(() => {
           commit(AUTH_CLEAR);
         });
     });
@@ -127,8 +126,7 @@ const actions = {
           configureAccessCsrf();
           resolve(resp);
         })
-        .catch(error => {
-
+        .catch(() => {
           commit(AUTH_CLEAR);
         });
     });

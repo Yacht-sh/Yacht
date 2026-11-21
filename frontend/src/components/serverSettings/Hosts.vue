@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import { mapActions, mapState, mapGetters } from "vuex";
+import { mapActions, mapState } from "vuex";
 
 const DEFAULT_COMPOSE_FORM = () => ({ action: "up", project: "", workingDir: "" });
 
@@ -162,7 +162,7 @@ export default {
       try {
         await this.queueComposeAction(payload);
         this.$set(this.composeForm, host.id, DEFAULT_COMPOSE_FORM());
-      } catch (err) {
+      } catch {
         // snackbar handled by store
       }
     }

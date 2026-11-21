@@ -17,7 +17,7 @@ It is intentionally practical. These pages document the branch flow, CI checks, 
 - integration branch: `develop`
 - main application image platforms: `linux/amd64`, `linux/arm64`
 - frontend stack: Vue 2 + Vuetify 2
-- backend API stack: FastAPI with Pydantic v1 compatibility preserved
+- backend API stack: FastAPI with Pydantic v2
 
 ## Why This Exists
 

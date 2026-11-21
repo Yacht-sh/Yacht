@@ -1,31 +1,30 @@
 # Verification Runbook
 
-This page records the checks that match the current repository workflows and the local commands that were used to verify the current `develop` branch.
+This page records the checks used by the current repository workflows and the corresponding local verification commands.
 
 ## CI Workflow Summary
 
-The main build workflow is [`../.github/workflows/build.yml`](../.github/workflows/build.yml).
+The main workflow is [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 
-It currently runs:
+It currently runs a code-quality job that:
 
-- frontend install, lint, audit, and production build
-- backend dependency install, `pip check`, `compileall`, Bandit, and `pip-audit`
-- agent dependency install, `compileall`, Bandit, and `pip-audit`
-- image publishing after verification succeeds
+- installs backend dependencies with Python 3.11 and syntax-checks selected backend modules
+- installs frontend dependencies and runs the production build (CI does not run frontend lint)
+- runs Bandit and a non-blocking backend `pip-audit`
+- builds and publishes the image, then runs non-blocking Trivy scans
 
 ## Frontend Local Verification
 
 Use Docker to avoid host Node drift:
 
 ```bash
-docker run --rm -v "$PWD/frontend:/app" -w /app node:20-bookworm-slim \
+docker run --rm -v "$PWD/frontend:/app" -w /app node:26-bookworm-slim \
   bash -lc 'npm ci --legacy-peer-deps --no-audit --no-fund && npm run lint && npm run build'
 ```
 
 Expected result:
 
-- `npm run lint` may emit warnings
-- the command should still exit successfully
+- `npm run lint` uses the ESLint 10 flat config and Vue 2 preset; it can emit warnings but should exit successfully
 - `npm run build` should complete and produce `frontend/dist`
 
 ## Backend Local Verification
@@ -40,7 +39,7 @@ bandit -q -r backend/api
 Containerized dependency audit with native build packages:
 
 ```bash
-docker run --rm -v "$PWD/backend:/app" -w /app python:3.11-slim \
+docker run --rm -v "$PWD/backend:/app" -w /app python:3.15-slim \
   bash -lc 'apt-get update >/tmp/apt.log && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       build-essential pkg-config libffi-dev libssl-dev libpq-dev \
@@ -52,15 +51,6 @@ docker run --rm -v "$PWD/backend:/app" -w /app python:3.11-slim \
 Expected result:
 
 - `No known vulnerabilities found`
-
-## Agent Local Verification
-
-The CI workflow verifies the agent separately. Follow the same pattern as the backend:
-
-- install `agent/requirements.txt`
-- run `python -m compileall agent`
-- run `bandit -q -r agent`
-- run `pip-audit -r agent/requirements.txt --progress-spinner=off`
 
 ## When Verification Fails
 
