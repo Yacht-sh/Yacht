@@ -40,10 +40,9 @@ router = APIRouter()
 settings = Settings()
 
 
-def _require_superuser(db: Session, Authorize: AuthJWT):
+async def _require_superuser(db: Session, Authorize: AuthJWT):
     """Verify the JWT subject is a superuser; used for admin-only endpoints."""
-    auth_check(Authorize)
-    current_user = Authorize.get_jwt_subject()
+    current_user = await Authorize.get_jwt_subject()
     if current_user is None:
         raise HTTPException(status_code=401, detail="Not logged in.")
     from api.db.crud.users import get_user_by_name
@@ -56,9 +55,12 @@ def _require_superuser(db: Session, Authorize: AuthJWT):
     return user
 
 
-@router.get("/", response_model=list[AgentRead])
+@router.get(
+    "/",
+    response_model=list[AgentRead],
+    dependencies=[Depends(auth_check)],
+)
 def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     agents = list_agents(db)
     return [
         AgentRead(
@@ -152,13 +154,12 @@ def sync(
     )
 
 
-@router.post("/compose-action")
+@router.post("/compose-action", dependencies=[Depends(auth_check)])
 def compose_action(
     payload: dict,
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     host_id = payload.get("host_id")
     if host_id is None:
         raise HTTPException(status_code=400, detail="host_id is required.")
@@ -192,7 +193,11 @@ def compose_action(
     return {"host_id": host.id, "job_id": job.job_key, "status": job.status}
 
 
-@router.get("/jobs", response_model=list[AgentJobReadExtended])
+@router.get(
+    "/jobs",
+    response_model=list[AgentJobReadExtended],
+    dependencies=[Depends(auth_check)],
+)
 def list_jobs(
     host_id: Optional[int] = None,
     page: int = 1,
@@ -201,7 +206,6 @@ def list_jobs(
     Authorize: AuthJWT = Depends(),
 ):
     """List agent jobs with bounded pagination (defaults: page 1, 100 items)."""
-    auth_check(Authorize)
     query = db.query(AgentJob).join(Agent).order_by(AgentJob.created_at.desc())
     if host_id is not None:
         query = query.filter(Agent.host_id == host_id)
@@ -223,11 +227,15 @@ def list_jobs(
     ]
 
 
-@router.get("/enrollment-token", response_model=dict)
-def enrollment_token(
+@router.get(
+    "/enrollment-token",
+    response_model=dict,
+    dependencies=[Depends(auth_check)],
+)
+async def enrollment_token(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
     """Return the enrollment token. Requires superuser access."""
-    _require_superuser(db, Authorize)
+    await _require_superuser(db, Authorize)
     return {"token": settings.AGENT_ENROLLMENT_TOKEN}

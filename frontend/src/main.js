@@ -36,6 +36,14 @@ function createAxiosResponseInterceptor() {
         return Promise.reject(error);
       }
 
+      const requestUrl = (error.config?.url || "").split("?")[0];
+      if (
+        requestUrl.endsWith("/auth/me") &&
+        !store.getters["auth/isAuthenticated"]
+      ) {
+        return Promise.reject(error);
+      }
+
       axios.interceptors.response.eject(interceptor);
 
       return store

@@ -10,7 +10,7 @@ from api.db.schemas.resources import ImageWrite, VolumeWrite, NetworkWrite
 from api.auth.auth import auth_check
 from api.utils.auth import get_db
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 ### Images ###
 
 
@@ -22,7 +22,6 @@ def get_images(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_images(db, host_id)
 
 
@@ -35,7 +34,6 @@ def write_image(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.write_image(db, image.image, host_id)
 
 
@@ -48,7 +46,6 @@ def get_image(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_image(db, image_id, host_id)
 
 
@@ -61,7 +58,6 @@ def pull_image(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.update_image(db, image_id, host_id)
 
 
@@ -74,7 +70,6 @@ def delete_image(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.delete_image(db, image_id, host_id)
 
 
@@ -87,7 +82,6 @@ def get_volumes(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_volumes(db, host_id)
 
 
@@ -100,7 +94,6 @@ def write_volume(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.write_volume(db, name.name, host_id)
 
 
@@ -113,7 +106,6 @@ def get_volume(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_volume(db, volume_name, host_id)
 
 
@@ -126,7 +118,6 @@ def delete_volume(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.delete_volume(db, volume_name, host_id)
 
 
@@ -139,7 +130,6 @@ def get_networks(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_networks(db, host_id)
 
 
@@ -152,7 +142,6 @@ def write_network(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.write_network(db, form, host_id)
 
 
@@ -165,7 +154,6 @@ def get_network(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.get_network(db, network_name, host_id)
 
 
@@ -178,5 +166,4 @@ def delete_network(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return resources.delete_network(db, network_name, host_id)

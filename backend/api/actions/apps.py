@@ -30,6 +30,7 @@ from api.actions.apps_runtime import (
     generate_support_bundle,
     launch_app,
     log_generator,
+    stat_generator,
     update_self_in_background,
 )
 from api.utils.templates import conv2dict

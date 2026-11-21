@@ -17,7 +17,7 @@ from api.auth.auth import auth_check
 from api.db.schemas import compose as schemas
 from api.utils.auth import get_db
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 
 
 @router.get("/")
@@ -26,7 +26,6 @@ def get_projects(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return get_compose_projects(db, host_id)
 
 
@@ -37,7 +36,6 @@ def get_project(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return get_compose(project_name, db, host_id)
 
 
@@ -49,7 +47,6 @@ def get_compose_action(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     if action == "delete":
         return delete_compose(project_name, db, host_id)
     else:
@@ -63,7 +60,6 @@ def write_compose_project(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return write_compose(compose=compose, db=db)
 
 
@@ -76,7 +72,6 @@ def get_compose_app_action(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return compose_app_action(project_name, action, app, db, host_id)
 
 
@@ -87,5 +82,4 @@ def get_support_bundle(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return generate_support_bundle(project_name, db, host_id)

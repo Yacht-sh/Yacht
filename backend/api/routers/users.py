@@ -14,13 +14,16 @@ router = APIRouter()
 settings = Settings()
 
 
-@router.post("/create", response_model=schemas.User)
+@router.post(
+    "/create",
+    response_model=schemas.User,
+    dependencies=[Depends(auth_check)],
+)
 def create_user(
     user: schemas.UserCreate,
     Authorize: AuthJWT = Depends(),
     db: Session = Depends(get_db),
 ):
-    auth_check(Authorize)
     db_user = crud.get_user_by_name(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already in use")
@@ -57,20 +60,23 @@ def login(
 
 
 @router.post("/refresh")
-def refresh(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_refresh_token_required()
+async def refresh(Authorize: AuthJWT = Depends()):
+    await Authorize.jwt_refresh_token_required()
 
-    current_user = Authorize.get_jwt_subject()
+    current_user = await Authorize.get_jwt_subject()
     new_access_token = Authorize.create_access_token(subject=current_user)
 
     Authorize.set_access_cookies(new_access_token)
     return {"refresh": "successful", "access_token": new_access_token}
 
 
-@router.get("/api/keys", response_model=List[schemas.APIKEY])
-def get_api_keys(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
-    current_user = Authorize.get_jwt_subject()
+@router.get(
+    "/api/keys",
+    response_model=List[schemas.APIKEY],
+    dependencies=[Depends(auth_check)],
+)
+async def get_api_keys(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    current_user = await Authorize.get_jwt_subject()
     if current_user is not None:
         user = crud.get_user_by_name(db=db, username=current_user)
     else:
@@ -78,15 +84,18 @@ def get_api_keys(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     return crud.get_keys(user, db)
 
 
-@router.post("/api/keys/new", response_model=schemas.DisplayAPIKEY)
-def create_api_key(
+@router.post(
+    "/api/keys/new",
+    response_model=schemas.DisplayAPIKEY,
+    dependencies=[Depends(auth_check)],
+)
+async def create_api_key(
     key: schemas.GenerateAPIKEY,
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
     name = key.key_name
-    auth_check(Authorize)
-    current_user = Authorize.get_jwt_subject()
+    current_user = await Authorize.get_jwt_subject()
     if current_user is not None:
         user = crud.get_user_by_name(db=db, username=current_user)
     else:
@@ -94,17 +103,19 @@ def create_api_key(
     return crud.create_key(name, user, Authorize, db)
 
 
-@router.get("/api/keys/{key_id}")
+@router.get("/api/keys/{key_id}", dependencies=[Depends(auth_check)])
 def delete_api_key(
     key_id, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
 ):
-    auth_check(Authorize)
     return crud.blacklist_api_key(key_id, db)
 
 
-@router.get("/me", response_model=schemas.User)
-def get_user(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
+@router.get(
+    "/me",
+    response_model=schemas.User,
+    dependencies=[Depends(auth_check)],
+)
+async def get_user(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     auth_setting = str(settings.DISABLE_AUTH)
     if auth_setting.lower() == "true":
         current_user = schemas.User
@@ -115,22 +126,24 @@ def get_user(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
         current_user.is_superuser = True
         return current_user
     else:
-        Authorize.jwt_required()
-        current_user = Authorize.get_jwt_subject()
+        current_user = await Authorize.get_jwt_subject()
         if current_user is not None:
             return crud.get_user_by_name(db=db, username=current_user)
         else:
             raise HTTPException(status_code=401, detail="Not logged in.")
 
 
-@router.post("/me", response_model=schemas.User)
-def update_user(
+@router.post(
+    "/me",
+    response_model=schemas.User,
+    dependencies=[Depends(auth_check)],
+)
+async def update_user(
     user: schemas.UserCreate,
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
-    current_user = Authorize.get_jwt_subject()
+    current_user = await Authorize.get_jwt_subject()
     if current_user is None:
         raise HTTPException(status_code=401, detail="Not logged in.")
 
@@ -146,16 +159,15 @@ def update_user(
     return updated_user
 
 
-@router.get("/logout")
+@router.get("/logout", dependencies=[Depends(auth_check)])
 def logout(Authorize: AuthJWT = Depends(), db: Session = Depends(get_db)):
-    auth_check(Authorize)
     crud.blacklist_login_token(Authorize, db)
     return {"msg": "Logout Successful"}
 
 
 @router.get("/logout/refresh")
-def logout(Authorize: AuthJWT = Depends(), db: Session = Depends(get_db)):
-    Authorize.jwt_refresh_token_required()
+async def logout(Authorize: AuthJWT = Depends(), db: Session = Depends(get_db)):
+    await Authorize.jwt_refresh_token_required()
     Authorize.unset_jwt_cookies()
     crud.blacklist_login_token(Authorize, db)
     return {"msg": "Logout Successful"}

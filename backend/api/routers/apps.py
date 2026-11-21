@@ -19,7 +19,7 @@ import asyncio
 
 settings = Settings()
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 
 
 @router.get("/")
@@ -28,7 +28,6 @@ def index(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.get_apps(db=db, host_id=host_id)
 
 
@@ -39,7 +38,6 @@ def check_app_updates(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.check_app_update(app_name, db=db, host_id=host_id)
 
 
@@ -50,7 +48,6 @@ def update_container(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.app_update(app_name, db=db, host_id=host_id)
 
 @router.get("/stats")
@@ -60,7 +57,6 @@ async def all_sse_stats(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     stat_generator = actions.all_stat_generator(request, db=db, host_id=host_id)
     return EventSourceResponse(stat_generator)
 
@@ -71,7 +67,6 @@ def get_container_details(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.get_app(app_name=app_name, db=db, host_id=host_id)
 
 
@@ -82,7 +77,6 @@ def get_container_processes(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.get_app_processes(app_name=app_name, db=db, host_id=host_id)
 
 
@@ -93,7 +87,6 @@ def get_support_bundle(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.generate_support_bundle(app_name, db=db, host_id=host_id)
 
 
@@ -105,7 +98,6 @@ def container_actions(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.app_action(app_name, action, db=db, host_id=host_id)
 
 
@@ -115,7 +107,6 @@ def deploy_app(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return actions.deploy_app(template=template, db=db)
 
 @router.get("/{app_name}/logs")
@@ -126,7 +117,6 @@ async def logs(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     log_generator = actions.log_generator(request, app_name, db=db, host_id=host_id)
     return EventSourceResponse(log_generator)
 
@@ -139,6 +129,5 @@ async def sse_stats(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     stat_generator = actions.stat_generator(request, app_name, db=db, host_id=host_id)
     return EventSourceResponse(stat_generator)

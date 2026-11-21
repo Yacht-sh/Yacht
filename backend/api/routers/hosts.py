@@ -14,12 +14,11 @@ from api.db.schemas.hosts import HostCreate, HostRead
 from api.utils.auth import get_db
 from api.utils.docker_hosts import get_docker_client
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 
 
 @router.get("/", response_model=list[HostRead])
 def index(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return get_hosts(db)
 
 
@@ -29,7 +28,6 @@ def host_agent(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     host = get_host(db, host_id)
     if host.connection_type != "agent":
         raise HTTPException(status_code=404, detail="Host is not agent-managed.")
@@ -59,7 +57,6 @@ def create(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     created = create_host(db, host)
     try:
         _, client = get_docker_client(db, created.id)
@@ -78,7 +75,6 @@ def delete_host(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     host = get_host(db, host_id)
     if host.is_default:
         raise HTTPException(

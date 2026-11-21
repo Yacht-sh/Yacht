@@ -24,7 +24,7 @@ containers.Base.metadata.create_all(bind=engine)
 
 settings = Settings()
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth_check)])
 
 
 @router.get(
@@ -35,7 +35,6 @@ router = APIRouter()
 def read_template_variables(
     db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
 ):
-    auth_check(Authorize)
     return crud.read_template_variables(db=db)
 
 
@@ -48,7 +47,6 @@ def set_template_variables(
     db: Session = Depends(get_db),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return crud.set_template_variables(new_variables=new_variables, db=db)
 
 
@@ -57,7 +55,6 @@ def set_template_variables(
     response_model=schemas.Import_Export,
 )
 def export_settings(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return scrud.export_settings(db=db)
 
 
@@ -69,7 +66,6 @@ def import_settings(
     upload: UploadFile = File(...),
     Authorize: AuthJWT = Depends(),
 ):
-    auth_check(Authorize)
     return scrud.import_settings(db=db, upload=upload)
 
 
@@ -77,7 +73,6 @@ def import_settings(
     "/prune/{resource}",
 )
 def prune_resources(resource: str, Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return resources.prune_resources(resource)
 
 
@@ -85,7 +80,6 @@ def prune_resources(resource: str, Authorize: AuthJWT = Depends()):
     "/update",
 )
 def update_self(background_tasks: BackgroundTasks, Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return _update_self(background_tasks)
 
 
@@ -93,5 +87,4 @@ def update_self(background_tasks: BackgroundTasks, Authorize: AuthJWT = Depends(
     "/check/update",
 )
 def _check_self_update(Authorize: AuthJWT = Depends()):
-    auth_check(Authorize)
     return check_self_update()
