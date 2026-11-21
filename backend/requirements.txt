@@ -1,44 +1,39 @@
-aiodocker==0.21.0
-aiostream==0.7.1
-alembic==1.10.4
-bcrypt==4.2.0
-certifi==2026.7.22
-cffi==2.0.0
-chardet==4.0.0
-click==8.4.2
-cryptography==50.0.0
-docker==6.1.2
-# docker-compose==2.20.0 (wrong version cant deploy)
-fastapi==0.135.1  # upgraded from 0.120.4 for starlette >=0.50 (CVE fix); supports pydantic v2
-libre-fastapi-jwt==0.22.8  # pydantic v2 compatible; 0.23+ requires py3.12, 0.22.8 fixes Security import bug
-gunicorn==23.0.0
+aiodocker==0.27.0
+aiostream==0.8.2
+alembic==1.20.1
+bcrypt==5.0.0
+certifi==2026.11.20
+cffi==2.1.1
+chardet==7.7.0
+click==8.5.1
+cryptography==50.0.2
+docker==7.2.0
+fastapi==0.165.0
+libre-fastapi-jwt==0.23.1
+gunicorn==27.0.1
 h11==0.16.0
-httptools==0.7.1
-idna==3.15
+httptools==0.9.0
+idna==3.20
 makefun==1.16.0
 # optional relational database drivers
-mysqlclient==2.2.8
+mysqlclient==2.3.2
 passlib==1.7.4
-# passlib==1.8.1 (wrong version cant deploy)
-psycopg2-binary==2.9.12
-pycparser==3.0
-pydantic==2.11.4  # upgraded from 1.10.22 for starlette CVE fix
-pydantic-settings==2.15.0
-# PyJWT==2.7.0
-PyJWT==2.13.0
-python-multipart==0.0.32
-PyYAML==6.0.1
-requests==2.33.0
+psycopg2-binary==2.9.13
+pycparser==3.12
+pydantic==2.14.4
+pydantic-settings==2.16.3
+PyJWT==2.15.1
+python-multipart==0.0.34
+PyYAML==6.0.4
+requests==2.34.2
 six==1.17.0
-sh==2.2.4
-# SQLAlchemy==2.0.20
-SQLAlchemy==2.0.52
-starlette==1.3.1  # CVE fix: 0.49.1 has 5 CVEs; 1.3.1 is patched version
-# sse-starlette==1.4.1 (wrong version cant deploy)
-sse-starlette==3.4.8  # upgraded for starlette 1.x compatibility
-typing-extensions==4.14.0
-urllib3==2.7.0
-uvicorn==0.22.0
-uvloop==0.22.1
-websocket-client==1.9.0
-websockets==16.0
+sh==2.4.0
+SQLAlchemy==2.1.9
+starlette==1.10.0
+sse-starlette==3.7.0
+typing-extensions==4.16.0
+urllib3==2.8.0
+uvicorn==0.54.0
+uvloop==0.23.0
+websocket-client==1.9.2
+websockets==17.4

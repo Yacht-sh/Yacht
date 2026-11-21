@@ -1,5 +1,5 @@
 # Build Vue.js frontend
-FROM node:20-bookworm-slim AS build-stage
+FROM node:26-bookworm-slim AS build-stage
 
 ARG VUE_APP_VERSION
 ENV VUE_APP_VERSION=${VUE_APP_VERSION}
@@ -11,9 +11,7 @@ COPY ./frontend/ ./
 RUN npm run build
 
 # Build Python wheels in an isolated stage so compiler toolchains do not land in runtime.
-FROM python:3.11-slim AS python-wheel-builder
-
-COPY ./backend/requirements.txt ./
+FROM python:3.15.2-slim AS python-wheel-builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -31,18 +29,19 @@ RUN apt-get update && \
     && \
     rm -rf /var/lib/apt/lists/*
 
+COPY ./backend/requirements.txt ./
+
 RUN pip3 install --upgrade pip setuptools wheel && \
-    pip3 wheel --wheel-dir /wheels -r requirements.txt setuptools
+    pip3 wheel --wheel-dir /wheels -r requirements.txt 'setuptools<81'
 
 # Runtime image
-FROM python:3.11-slim AS deploy-stage
+FROM python:3.15.2-slim AS deploy-stage
 
 ENV PYTHONIOENCODING=UTF-8
 ENV THEME=Default
 ENV PYTHONPATH=/api
 
 WORKDIR /api
-COPY ./backend/requirements.txt ./
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -53,13 +52,16 @@ RUN apt-get update && \
     libmariadb3 \
     libjpeg62-turbo \
     && rm -rf /var/lib/apt/lists/*
+    
 COPY --from=python-wheel-builder /wheels /wheels
 
-RUN pip3 install --no-cache-dir --no-index --find-links=/wheels setuptools && \
+RUN groupadd -r abc && useradd -r -g abc abc
+
+COPY ./backend/requirements.txt ./
+
+RUN pip3 install --no-cache-dir --no-index --find-links=/wheels 'setuptools<81' && \
     pip3 install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
     rm -rf /wheels
-
-RUN groupadd -r abc && useradd -r -g abc abc
 
 COPY ./backend/ /api/
 COPY ./nginx.conf /etc/nginx/nginx.conf
