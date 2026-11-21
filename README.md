@@ -62,7 +62,7 @@ Example agent deployment:
 ```yaml
 services:
   yacht-agent:
-    image: ghcr.io/yacht-sh/yacht:latest:latest
+    image: ghcr.io/yacht-sh/yacht:latest
     container_name: yacht-agent
     restart: unless-stopped
     environment:
